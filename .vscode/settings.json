@@ -1,0 +1,14 @@
+{
+  "[php]": {
+    "editor.defaultFormatter": "open-southeners.laravel-pint",
+    "editor.formatOnSave": true
+  },
+  "php.validate.enable": false,
+  "files.associations": {
+    "*.blade.php": "blade"
+  },
+  "tailwindCSS.includeLanguages": {
+    "blade": "html"
+  },
+  "files.eol": "\n"
+}
