@@ -16,7 +16,7 @@ Setiap PBI/modul menaruh route-nya di file sendiri di folder ini, misalnya `rout
 | Admin | user login, ACTIVE, dengan role ADMIN | `['auth', 'active', 'role:ADMIN']` + prefix `admin` + nama `admin.` |
 
 - `auth`: tamu diarahkan ke halaman login.
-- `active`: user yang statusnya SUSPENDED langsung di-logout dan diarahkan ke login dengan pesan.
+- `active`: user yang statusnya SUSPENDED langsung di-logout dan diarahkan ke login dengan pesan. Middleware ini sudah terpasang global di grup `web` (bootstrap/app.php), sehingga berlaku juga di halaman publik. Tetap tulis `active` di grup supaya maksud route terlihat jelas.
 - `role:ADMIN`: user dengan role lain mendapat 403.
 - Pengelola Hub **bukan role**. Pengecekannya lewat penugasan di tabel `hub_managers` (PBI-01), biasanya memakai Policy.
 

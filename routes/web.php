@@ -16,9 +16,18 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::middleware(['auth'])->group(function () {
+// Warga (dan admin) yang sudah login dan aktif.
+Route::middleware(['auth', 'active'])->group(function () {
     Route::view('/dashboard', 'dashboard')->name('dashboard');
 });
+
+// Khusus admin.
+Route::middleware(['auth', 'active', 'role:ADMIN'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::view('/', 'admin.dashboard')->name('dashboard');
+    });
 
 /*
 |--------------------------------------------------------------------------
