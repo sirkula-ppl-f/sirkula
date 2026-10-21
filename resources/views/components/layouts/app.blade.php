@@ -1,0 +1,68 @@
+@props(['title' => null])
+
+@php
+    $user = auth()->user();
+
+    // Tautan navbar sesuai role. Tambahkan tautan modul baru di sini.
+    $links = [
+        ['label' => 'Beranda', 'route' => 'dashboard'],
+    ];
+
+    if ($user->isAdmin()) {
+        $links[] = ['label' => 'Admin', 'route' => 'admin.dashboard'];
+    }
+@endphp
+
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+    <head>
+        @include('partials.head', ['title' => $title])
+    </head>
+    <body class="min-h-screen bg-gray-50 font-sans text-gray-900 antialiased">
+        <a href="#konten" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:shadow">
+            Lewati ke konten utama
+        </a>
+
+        <header class="border-b border-gray-200 bg-white">
+            <nav aria-label="Navigasi utama" class="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
+                <a href="{{ route('dashboard') }}" class="text-lg font-semibold text-brand-700">
+                    {{ config('app.name') }}
+                </a>
+
+                <ul class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium">
+                    @foreach ($links as $link)
+                        <li>
+                            <a
+                                href="{{ route($link['route']) }}"
+                                @class([
+                                    'rounded-md px-1 py-0.5',
+                                    'text-brand-700 underline underline-offset-4' => request()->routeIs($link['route']),
+                                    'text-gray-700 hover:text-brand-700' => ! request()->routeIs($link['route']),
+                                ])
+                                @if (request()->routeIs($link['route'])) aria-current="page" @endif
+                            >
+                                {{ $link['label'] }}
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
+
+                <div class="ms-auto flex items-center gap-3 text-sm">
+                    <span class="max-w-40 truncate text-gray-700" dusk="nav-user-name">{{ $user->name }}</span>
+
+                    {{-- Tombol keluar (SP-24) --}}
+                </div>
+            </nav>
+        </header>
+
+        <main id="konten" class="mx-auto max-w-6xl px-4 py-8">
+            <x-alert class="mb-6" />
+
+            @if ($title)
+                <h1 class="mb-6 text-2xl font-semibold">{{ $title }}</h1>
+            @endif
+
+            {{ $slot }}
+        </main>
+    </body>
+</html>
