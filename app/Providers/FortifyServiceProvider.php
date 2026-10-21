@@ -55,6 +55,10 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::requestPasswordResetLinkView(fn () => view('auth.forgot-password'));
         Fortify::resetPasswordView(fn (Request $request) => view('auth.reset-password', ['request' => $request]));
 
+        // Fitur konfirmasi kata sandi belum dipakai, tetapi route bawaan Fortify
+        // (/user/confirm-password) tidak bisa dimatikan lewat features. Balas 404, bukan 500.
+        Fortify::confirmPasswordView(fn () => abort(404));
+
         // Dipasang sebagai throttle:login di route POST /login, jadi semua percobaan (termasuk yang berhasil) ikut dihitung.
         RateLimiter::for('login', function (Request $request) {
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());

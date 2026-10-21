@@ -95,6 +95,18 @@ class AccessControlTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_halaman_konfirmasi_kata_sandi_fortify_mengembalikan_404_untuk_user_login(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->get('/user/confirm-password')
+            ->assertNotFound();
+    }
+
+    public function test_halaman_konfirmasi_kata_sandi_fortify_mengarahkan_tamu_ke_login(): void
+    {
+        $this->get('/user/confirm-password')->assertRedirect(route('login'));
+    }
+
     public function test_user_aktif_tetap_login_di_halaman_publik(): void
     {
         $user = User::factory()->create();
