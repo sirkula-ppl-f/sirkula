@@ -50,7 +50,17 @@
                 <div class="ms-auto flex items-center gap-3 text-sm">
                     <span class="max-w-40 truncate text-gray-700" dusk="nav-user-name">{{ $user->name }}</span>
 
-                    {{-- Tombol keluar (SP-24) --}}
+                    {{-- Logout hanya lewat POST + CSRF, tidak ada tautan GET. --}}
+                    <form method="POST" action="{{ route('logout') }}" data-submit-once>
+                        @csrf
+                        <button
+                            type="submit"
+                            class="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                            dusk="logout-button"
+                        >
+                            Keluar
+                        </button>
+                    </form>
                 </div>
             </nav>
         </header>
