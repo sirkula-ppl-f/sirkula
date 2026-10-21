@@ -13,8 +13,9 @@ class ExampleTest extends DuskTestCase
     public function test_basic_example(): void
     {
         $this->browse(function (Browser $browser) {
+            // Kata "Laravel" di halaman welcome berupa gambar SVG, jadi yang dicek judul halaman.
             $browser->visit('/')
-                ->assertSee('Laravel');
+                ->assertTitle(config('app.name'));
         });
     }
 }
