@@ -19,6 +19,7 @@ Panduan ini buat kamu yang baru mau mulai ngoding Sirkula. Ikuti urut dari atas 
 9. [Aturan tim](#9-aturan-tim)
 10. [Troubleshooting](#10-troubleshooting)
 11. [Cheatsheet perintah](#11-cheatsheet-perintah)
+12. [Deploy (demo/UAT/production)](#12-deploy-demouatproduction)
 
 ---
 
@@ -240,6 +241,15 @@ Stop server dengan `Ctrl + C` di masing-masing terminal.
 
 > Jangan pakai `composer run dev` di Windows. Salah satu prosesnya (`pail`) butuh ekstensi yang tidak tersedia di Windows dan akan error.
 
+### 5f. Email lokal (Mailpit)
+
+Email aplikasi (misalnya tautan reset kata sandi) dikirim ke **Mailpit**, bukan ke email sungguhan. `.env.example` sudah diatur ke SMTP `127.0.0.1:1025`.
+
+1. Jalankan Mailpit (`mailpit.exe`, unduh dari <https://github.com/axllent/mailpit/releases> kalau belum punya).
+2. Buka kotak masuknya di <http://127.0.0.1:8025>.
+
+> Pakai `127.0.0.1`, bukan `localhost`. Di sebagian laptop `localhost` mengarah ke IPv6 (`::1`) dan halaman Mailpit tidak terbuka.
+
 ---
 
 ## 6. Setting VS Code
@@ -424,21 +434,47 @@ Kalau ragu waktu menyelesaikan conflict, tanya dulu ke pemilik kode yang bentrok
 
 ### Laravel Dusk
 
-Dusk membuka Chrome otomatis untuk menguji halaman seperti pengguna sungguhan.
+Dusk membuka Chrome otomatis untuk menguji halaman seperti pengguna sungguhan. Dusk memakai database terpisah, `sirkula_dusk`, yang **dikosongkan setiap kali tes jalan**. Data di database `sirkula` kamu tidak tersentuh.
+
+**Persiapan (sekali saja):**
 
 1. Pastikan Google Chrome terpasang.
-2. Sesuaikan ChromeDriver dengan versi Chrome kamu (cukup sekali, atau setiap Chrome update):
+2. Unduh ChromeDriver yang cocok dengan versi Chrome kamu (ulangi setiap Chrome update):
    ```powershell
    php artisan dusk:chrome-driver --detect
    ```
-3. Jalankan server di satu terminal:
+3. Buat database khusus Dusk (atau lewat HeidiSQL/phpMyAdmin):
+   ```powershell
+   mysql -u root -e "CREATE DATABASE sirkula_dusk CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+   ```
+4. Buat `.env.dusk.local` dari contoh, lalu isi `APP_KEY` dengan nilai `APP_KEY` dari `.env` kamu. File ini tidak ikut ter-commit.
+   ```powershell
+   Copy-Item .env.dusk.example .env.dusk.local
+   ```
+
+**Menjalankan tes:**
+
+1. Siapkan aset: biarkan `npm run dev` menyala, atau jalankan `npm run build` sekali.
+2. Terminal 1, jalankan server **tanpa** `--no-reload`:
    ```powershell
    php artisan serve
    ```
-4. Di terminal lain, jalankan Dusk:
+3. Terminal 2:
    ```powershell
+   php artisan config:clear
    php artisan dusk
    ```
+
+Hal yang perlu diketahui:
+
+- Selama `php artisan dusk` berjalan, Dusk **menukar `.env` sementara** dengan `.env.dusk.local`, lalu mengembalikannya. Server `php artisan serve` otomatis restart dan ikut memakai `sirkula_dusk`. Kalau server dijalankan dengan `--no-reload`, server tetap memakai database `sirkula`: tes gagal dan data kamu ikut terisi data tes.
+- `php artisan config:clear` wajib. Config yang di-cache membuat `.env.dusk.local` diabaikan.
+- **Pengaman:** `tests/DuskTestCase.php` membatalkan tes **sebelum** database dikosongkan bila nama database aktif tidak diakhiri `_dusk`. Pesan `Dusk dibatalkan: DB aktif '...' bukan DB Dusk` berarti `.env.dusk.local` belum ada atau isinya salah, atau tes dijalankan langsung lewat `phpunit`, bukan `php artisan dusk`.
+- Kalau Dusk terhenti di tengah jalan (misalnya Ctrl + C) dan ada file `.env.backup`, kembalikan `.env` kamu:
+  ```powershell
+  Copy-Item .env.backup .env -Force
+  Remove-Item .env.backup
+  ```
 
 Tes Dusk disimpan di folder `tests/Browser`. Setiap PBI wajib punya tes Dusk untuk kriteria penerimaannya.
 
@@ -515,6 +551,13 @@ git config --global core.autocrlf input
 **Dusk error soal versi ChromeDriver**
 Jalankan `php artisan dusk:chrome-driver --detect`.
 
+**`dusk:chrome-driver` gagal dengan `cURL error 60: SSL certificate`**
+PHP kamu belum punya daftar sertifikat CA (sering terjadi di PHP hasil download manual, Opsi B). Jangan matikan verifikasi SSL. Pakai CA bundle bawaan Git untuk sekali jalan:
+```powershell
+php -d curl.cainfo="C:\Program Files\Git\mingw64\etc\ssl\certs\ca-bundle.crt" -d openssl.cafile="C:\Program Files\Git\mingw64\etc\ssl\certs\ca-bundle.crt" artisan dusk:chrome-driver --detect
+```
+Supaya permanen, isi `curl.cainfo` dan `openssl.cafile` di `php.ini` dengan path yang sama.
+
 Masih buntu? Kirim screenshot error lengkap + perintah yang dijalankan ke grup.
 
 ---
@@ -561,3 +604,41 @@ php artisan migrate:fresh --seed   # reset database + isi data dummy (hati-hati,
 # --- Bersihkan cache kalau perubahan tidak muncul ---
 php artisan optimize:clear
 ```
+
+---
+
+## 12. Deploy (demo/UAT/production)
+
+Aturan ini **wajib** untuk server apa pun yang bisa diakses orang lain (demo, UAT, production).
+
+Isi `.env` di server:
+
+```env
+APP_ENV=production
+APP_DEBUG=false
+SESSION_SECURE_COOKIE=true
+```
+
+`SESSION_SECURE_COOKIE=true` hanya jalan di HTTPS.
+
+Perintah deploy:
+
+```bash
+composer install --no-dev --optimize-autoloader
+npm ci
+npm run build
+php artisan migrate --force
+php artisan db:seed --class=AdminSeeder --force   # sekali saja; isi ADMIN_* di .env server dulu
+php artisan config:cache
+php artisan route:cache
+```
+
+**Kenapa wajib:** paket Laravel Dusk (khusus tes) mendaftarkan route `_dusk/login/{userId}` yang bisa dipakai untuk **login sebagai user mana pun, termasuk admin**, selama route itu aktif. Route ini baru hilang kalau `APP_ENV=production` dan paket dev tidak terpasang (`composer install --no-dev`). `APP_DEBUG=false` mencegah detail error dan isi konfigurasi tampil ke pengunjung.
+
+Cek cepat di server setelah deploy:
+
+```bash
+php artisan route:list --path=_dusk
+```
+
+Hasilnya harus menyatakan tidak ada route yang cocok. Kalau route `_dusk/...` masih muncul, server **belum aman**: perbaiki `.env` dan ulangi `composer install --no-dev`.

@@ -8,4 +8,19 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* Warna utama aplikasi. Ganti nilai di sini saat mockup tersedia. */
+    --color-brand-50: #ecfdf5;
+    --color-brand-100: #d1fae5;
+    --color-brand-600: #059669;
+    --color-brand-700: #047857;
+    --color-brand-800: #065f46;
+}
+
+@layer base {
+    /* Fokus keyboard selalu terlihat di semua elemen interaktif (NFR-002). */
+    :focus-visible {
+        outline: 2px solid var(--color-brand-600);
+        outline-offset: 2px;
+    }
 }

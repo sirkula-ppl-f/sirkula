@@ -28,5 +28,8 @@ class ResetUserPassword implements ResetsUserPasswords
         $user->forceFill([
             'password' => Hash::make($input['password']),
         ])->save();
+
+        // Semua sesi lama dicabut setelah kata sandi diganti (FR-002).
+        $user->revokeAllSessions();
     }
 }
