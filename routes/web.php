@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Laravel\Fortify\Http\Controllers\NewPasswordController;
+use Laravel\Fortify\Http\Controllers\PasswordResetLinkController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,6 +16,14 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
+});
+
+// Fortify tidak memasang rate limit di POST reset kata sandi. Kedua route ini
+// dideklarasi ulang dengan controller Fortify yang sama, ditambah throttle.
+// File ini dimuat setelah route Fortify, sehingga route di bawah menimpanya.
+Route::middleware(['guest:'.config('fortify.guard'), 'throttle:password-reset'])->group(function () {
+    Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
+    Route::post('/reset-password', [NewPasswordController::class, 'store'])->name('password.update');
 });
 
 // Warga (dan admin) yang sudah login dan aktif.
