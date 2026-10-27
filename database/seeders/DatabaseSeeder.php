@@ -18,12 +18,9 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             AdminSeeder::class,
-        ]),
-    $this->call([
-        AdminSeeder::class,
-        MasterDataSeeder::class,
+             MasterDataSeeder::class,
         FixtureSeeder::class,
-    ]);
+        ]);
 } 
 
 }
