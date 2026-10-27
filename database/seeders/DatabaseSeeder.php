@@ -18,8 +18,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             AdminSeeder::class,
-             MasterDataSeeder::class,
-        FixtureSeeder::class,
+            MasterDataSeeder::class,
+            FixtureSeeder::class,
         ]);
 } 
 
