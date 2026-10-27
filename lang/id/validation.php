@@ -166,6 +166,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Rule Aplikasi (app/Rules)
+    |--------------------------------------------------------------------------
+    */
+
+    'active_category' => [
+        'missing' => ':Attribute yang dipilih tidak ditemukan.',
+        'inactive' => ':Attribute yang dipilih sudah nonaktif dan tidak dapat dipakai untuk listing baru.',
+        'type' => ':Attribute yang dipilih tidak berlaku untuk :type.',
+    ],
+    'active_material' => [
+        'missing' => ':Attribute yang dipilih tidak ditemukan.',
+        'inactive' => ':Attribute yang dipilih sudah nonaktif dan tidak dapat dipakai untuk listing baru.',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Pesan Kustom
     |--------------------------------------------------------------------------
     */
@@ -189,6 +205,8 @@ return [
         'password_confirmation' => 'konfirmasi kata sandi',
         'current_password' => 'kata sandi saat ini',
         'token' => 'token',
+        'category_id' => 'kategori',
+        'material_id' => 'material',
     ],
 
 ];
