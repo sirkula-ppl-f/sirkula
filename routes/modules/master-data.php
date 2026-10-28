@@ -3,9 +3,10 @@
 // PBI-04 (FR-007): data master kategori dan jenis material (berlaku nasional).
 
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\MaterialController;
 use Illuminate\Support\Facades\Route;
 
-// Admin → URL /admin/kategori, nama route admin.categories.*
+// Admin → URL /admin/kategori dan /admin/material, nama route admin.categories.* dan admin.materials.*
 Route::middleware(['auth', 'active', 'role:ADMIN'])
     ->prefix('admin')
     ->name('admin.')
@@ -22,5 +23,19 @@ Route::middleware(['auth', 'active', 'role:ADMIN'])
                 Route::delete('/{category}', 'destroy')->name('destroy');
                 Route::patch('/{category}/nonaktifkan', 'deactivate')->name('deactivate');
                 Route::patch('/{category}/aktifkan', 'activate')->name('activate');
+            });
+
+        Route::controller(MaterialController::class)
+            ->prefix('material')
+            ->name('materials.')
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::get('/tambah', 'create')->name('create');
+                Route::post('/', 'store')->name('store');
+                Route::get('/{material}/ubah', 'edit')->name('edit');
+                Route::put('/{material}', 'update')->name('update');
+                Route::delete('/{material}', 'destroy')->name('destroy');
+                Route::patch('/{material}/nonaktifkan', 'deactivate')->name('deactivate');
+                Route::patch('/{material}/aktifkan', 'activate')->name('activate');
             });
     });
