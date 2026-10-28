@@ -27,7 +27,6 @@ class StoreListingRequest extends FormRequest
             'action' => 'required|in:draft,submit',
         ];
 
-        // Validasi khusus berdasarkan tipe
         if ($this->listing_type === 'PRELOVED') {
             $rules['category_id'] = 'required|exists:categories,id';
         } elseif ($this->listing_type === 'RECYCLABLE') {

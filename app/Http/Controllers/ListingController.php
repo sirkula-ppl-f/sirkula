@@ -7,7 +7,6 @@ use App\Models\Category;
 use App\Models\Hub;
 use App\Models\Listing;
 use App\Models\ListingImage;
-// Asumsi kamu punya model Material dan Storefront
 use App\Models\Material;
 use App\Models\Region;
 use App\Models\Storefront;
@@ -19,7 +18,6 @@ class ListingController extends Controller
 {
     public function index()
     {
-        // Menampilkan daftar listing milik user yang login
         $listings = Listing::where('user_id', auth()->id())->get();
 
         return view('listings.index', compact('listings'));
@@ -32,7 +30,6 @@ class ListingController extends Controller
         $regions = Region::all();
         $materials = Material::all();
 
-        // Asumsi relasi user memiliki storefronts
         $storefronts = Storefront::where('user_id', auth()->id())->get();
 
         return view('listings.create', compact('categories', 'hubs', 'regions', 'materials', 'storefronts'));

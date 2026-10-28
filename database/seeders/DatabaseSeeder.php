@@ -21,6 +21,5 @@ class DatabaseSeeder extends Seeder
             MasterDataSeeder::class,
             FixtureSeeder::class,
         ]);
-} 
-
+    }
 }
