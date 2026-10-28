@@ -21,4 +21,23 @@ return [
         'empty_filtered' => 'Tidak ada kategori yang cocok dengan pencarian atau filter.',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Data Master: Jenis Material
+    |--------------------------------------------------------------------------
+    */
+
+    'materials' => [
+        'created' => 'Material ":name" berhasil ditambahkan.',
+        'updated' => 'Material ":name" berhasil diperbarui.',
+        'deactivated' => 'Material ":name" dinonaktifkan. Listing baru tidak dapat memakainya.',
+        'activated' => 'Material ":name" diaktifkan kembali.',
+        'deleted' => 'Material ":name" berhasil dihapus.',
+        'in_use' => 'Material sudah dipakai listing atau harga acuan; hanya dapat dinonaktifkan.',
+        'empty' => 'Belum ada material.',
+        'empty_filtered' => 'Tidak ada material yang cocok dengan pencarian atau filter.',
+        'table_label' => 'Tabel daftar material',
+        'table_caption' => 'Daftar material, halaman :page dari :last',
+    ],
+
 ];
