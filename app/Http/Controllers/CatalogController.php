@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -16,7 +17,7 @@ class CatalogController extends Controller
                 'type' => 'Barang Bekas',
                 'category' => 'Elektronik',
                 'condition' => 'Baik',
-                'region' => 'Bandung Kota',
+                'region' => 'DKI Jakarta',
                 'hub' => 'Bank Sampah Cicendo',
                 'price' => 850000,
                 'unit' => 'unit',
@@ -30,7 +31,7 @@ class CatalogController extends Controller
                 'type' => 'Material Daur Ulang',
                 'category' => 'Plastik',
                 'condition' => 'Terpilah',
-                'region' => 'Bandung Kota',
+                'region' => 'Jawa Barat',
                 'hub' => 'RW 05 Dago',
                 'price' => 112500,
                 'unit' => 'lot',
@@ -45,7 +46,7 @@ class CatalogController extends Controller
                 'type' => 'Produk Upcycle',
                 'category' => 'Tekstil',
                 'condition' => 'Baik',
-                'region' => 'Bandung Kabupaten',
+                'region' => 'Jawa Tengah',
                 'hub' => 'Etalase Kriya Lembang',
                 'price' => 135000,
                 'unit' => 'unit',
@@ -59,7 +60,7 @@ class CatalogController extends Controller
                 'type' => 'Barang Bekas',
                 'category' => 'Kayu',
                 'condition' => 'Baik',
-                'region' => 'Bandung Kota',
+                'region' => 'DI Yogyakarta',
                 'hub' => 'Komunitas Buah Batu',
                 'price' => 275000,
                 'unit' => 'unit',
@@ -73,7 +74,7 @@ class CatalogController extends Controller
                 'type' => 'Material Daur Ulang',
                 'category' => 'Kertas',
                 'condition' => 'Bersih',
-                'region' => 'Bandung Kota',
+                'region' => 'Jawa Timur',
                 'hub' => 'Bank Sampah Cicendo',
                 'price' => 60000,
                 'unit' => 'lot',
@@ -88,7 +89,7 @@ class CatalogController extends Controller
                 'type' => 'Produk Upcycle',
                 'category' => 'Tekstil',
                 'condition' => 'Baik',
-                'region' => 'Bandung Kabupaten',
+                'region' => 'Bali',
                 'hub' => 'Etalase Kriya Lembang',
                 'price' => 95000,
                 'unit' => 'unit',
@@ -102,7 +103,7 @@ class CatalogController extends Controller
                 'type' => 'Barang Bekas',
                 'category' => 'Elektronik',
                 'condition' => 'Cukup baik',
-                'region' => 'Bandung Kota',
+                'region' => 'Sumatera Utara',
                 'hub' => 'RW 05 Dago',
                 'price' => 120000,
                 'unit' => 'unit',
@@ -116,7 +117,7 @@ class CatalogController extends Controller
                 'type' => 'Material Daur Ulang',
                 'category' => 'Logam',
                 'condition' => 'Terpilah',
-                'region' => 'Bandung Kota',
+                'region' => 'Sulawesi Selatan',
                 'hub' => 'Komunitas Buah Batu',
                 'price' => 180000,
                 'unit' => 'lot',
@@ -133,34 +134,22 @@ class CatalogController extends Controller
         $listings = collect($this->sampleListings());
 
         $search = trim((string) $request->query('search', ''));
-
         $sort = (string) $request->query('sort', 'newest');
-
         $type = (string) $request->query('type', '');
-
         $category = (string) $request->query('category', '');
-
         $condition = (string) $request->query('condition', '');
-
         $region = (string) $request->query('region', '');
-
         $hub = (string) $request->query('hub', '');
 
         $minPrice = $request->query('min_price');
-
         $maxPrice = $request->query('max_price');
 
         if ($search !== '') {
             $keyword = mb_strtolower($search);
 
             $listings = $listings->filter(function ($item) use ($keyword) {
-                return str_contains(
-                    mb_strtolower($item['title']),
-                    $keyword
-                ) || str_contains(
-                    mb_strtolower($item['description']),
-                    $keyword
-                );
+                return str_contains(mb_strtolower($item['title']), $keyword)
+                    || str_contains(mb_strtolower($item['description']), $keyword);
             });
         }
 
@@ -225,6 +214,7 @@ class CatalogController extends Controller
             'listings' => $paginatedListings,
             'search' => $search,
             'sort' => $sort,
+            'categories' => Category::active()->orderBy('name')->get(),
         ]);
     }
 

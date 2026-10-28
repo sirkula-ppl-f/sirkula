@@ -71,7 +71,7 @@
 
 <main>
     <h1>Katalog Sirkula</h1>
-    <p class="subtitle">Barang bekas layak pakai, material daur ulang terpilah, dan produk upcycle di Bandung Raya</p>
+    <p class="subtitle">Jelajahi barang bekas layak pakai, material daur ulang terpilah, dan produk upcycle dari berbagai wilayah di Indonesia.</p>
 
     <form class="search" method="GET" action="{{ route('catalog.index') }}">
         <input type="search" name="search" value="{{ $search }}" placeholder="Cari berdasarkan judul atau deskripsi...">
@@ -99,26 +99,69 @@
     <form class="filters" method="GET" action="{{ route('catalog.index') }}">
         <input type="hidden" name="search" value="{{ $search }}">
 
-        <select name="category">
-            <option value="">Kategori</option>
-            @foreach(['Plastik','Kertas','Logam','Kayu','Tekstil','Elektronik'] as $option)
-                <option value="{{ $option }}" @selected(request('category') === $option)>{{ $option }}</option>
-            @endforeach
-        </select>
 
-        <select name="condition">
-            <option value="">Kondisi</option>
-            @foreach(['Baik','Cukup baik','Bersih','Terpilah'] as $option)
-                <option value="{{ $option }}" @selected(request('condition') === $option)>{{ $option }}</option>
-            @endforeach
-        </select>
+<select name="category">
+    <option value="">Semua Kategori</option>
+    @foreach($categories as $categoryOption)
+        <option
+            value="{{ $categoryOption->name }}"
+            @selected(request('category') === $categoryOption->name)
+        >
+            {{ $categoryOption->name }}
+        </option>
+    @endforeach
+</select>
 
-        <select name="region">
-            <option value="">Wilayah</option>
-            @foreach(['Bandung Kota','Bandung Kabupaten'] as $option)
-                <option value="{{ $option }}" @selected(request('region') === $option)>{{ $option }}</option>
-            @endforeach
-        </select>
+
+
+<select name="region">
+    <option value="">Semua Wilayah</option>
+    @foreach([
+        'Aceh',
+        'Sumatera Utara',
+        'Sumatera Barat',
+        'Riau',
+        'Kepulauan Riau',
+        'Jambi',
+        'Sumatera Selatan',
+        'Bangka Belitung',
+        'Bengkulu',
+        'Lampung',
+        'DKI Jakarta',
+        'Banten',
+        'Jawa Barat',
+        'Jawa Tengah',
+        'DI Yogyakarta',
+        'Jawa Timur',
+        'Bali',
+        'Nusa Tenggara Barat',
+        'Nusa Tenggara Timur',
+        'Kalimantan Barat',
+        'Kalimantan Tengah',
+        'Kalimantan Selatan',
+        'Kalimantan Timur',
+        'Kalimantan Utara',
+        'Sulawesi Utara',
+        'Gorontalo',
+        'Sulawesi Tengah',
+        'Sulawesi Barat',
+        'Sulawesi Selatan',
+        'Sulawesi Tenggara',
+        'Maluku',
+        'Maluku Utara',
+        'Papua',
+        'Papua Barat',
+        'Papua Selatan',
+        'Papua Tengah',
+        'Papua Pegunungan',
+        'Papua Barat Daya'
+    ] as $option)
+        <option value="{{ $option }}" @selected(request('region') === $option)>
+            {{ $option }}
+        </option>
+    @endforeach
+</select>
+
 
         <select name="hub">
             <option value="">Hub</option>
