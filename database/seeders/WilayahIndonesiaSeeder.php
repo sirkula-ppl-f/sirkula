@@ -9,69 +9,52 @@ class WilayahIndonesiaSeeder extends Seeder
 {
     public function run(): void
     {
-        $wilayahList = [
-            // Sumatera
-            ['namaWilayah' => 'Aceh', 'kabupatenKota' => 'Kota Sabang', 'provinsi' => 'Aceh', 'tipeWilayah' => 'Kota'],
-            ['namaWilayah' => 'Banda Aceh', 'kabupatenKota' => 'Kota Banda Aceh', 'provinsi' => 'Aceh', 'tipeWilayah' => 'Kota'],
-            ['namaWilayah' => 'Sumatera Utara', 'kabupatenKota' => 'Kota Medan', 'provinsi' => 'Sumatera Utara', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Sumatera Barat', 'kabupatenKota' => 'Kota Padang', 'provinsi' => 'Sumatera Barat', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Riau', 'kabupatenKota' => 'Kota Pekanbaru', 'provinsi' => 'Riau', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Kepulauan Riau', 'kabupatenKota' => 'Kota Batam', 'provinsi' => 'Kepulauan Riau', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Jambi', 'kabupatenKota' => 'Kota Jambi', 'provinsi' => 'Jambi', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Bengkulu', 'kabupatenKota' => 'Kota Bengkulu', 'provinsi' => 'Bengkulu', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Sumatera Selatan', 'kabupatenKota' => 'Kota Palembang', 'provinsi' => 'Sumatera Selatan', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Kepulauan Bangka Belitung', 'kabupatenKota' => 'Kota Pangkalpinang', 'provinsi' => 'Kepulauan Bangka Belitung', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Lampung', 'kabupatenKota' => 'Kota Bandar Lampung', 'provinsi' => 'Lampung', 'tipeWilayah' => 'Provinsi'],
-
-            // Jawa
-            ['namaWilayah' => 'DKI Jakarta', 'kabupatenKota' => 'Jakarta Pusat', 'provinsi' => 'DKI Jakarta', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Bandung Kota', 'kabupatenKota' => 'Kota Bandung', 'provinsi' => 'Jawa Barat', 'tipeWilayah' => 'Kota'],
-            ['namaWilayah' => 'Kabupaten Bandung', 'kabupatenKota' => 'Kab. Bandung', 'provinsi' => 'Jawa Barat', 'tipeWilayah' => 'Kabupaten'],
-            ['namaWilayah' => 'Bandung Barat', 'kabupatenKota' => 'Kab. Bandung Barat', 'provinsi' => 'Jawa Barat', 'tipeWilayah' => 'Kabupaten'],
-            ['namaWilayah' => 'Cimahi', 'kabupatenKota' => 'Kota Cimahi', 'provinsi' => 'Jawa Barat', 'tipeWilayah' => 'Kota'],
-            ['namaWilayah' => 'Banten', 'kabupatenKota' => 'Kota Serang', 'provinsi' => 'Banten', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Jawa Tengah', 'kabupatenKota' => 'Kota Semarang', 'provinsi' => 'Jawa Tengah', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'DI Yogyakarta', 'kabupatenKota' => 'Kota Yogyakarta', 'provinsi' => 'DI Yogyakarta', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Jawa Timur', 'kabupatenKota' => 'Kota Surabaya', 'provinsi' => 'Jawa Timur', 'tipeWilayah' => 'Provinsi'],
-
-            // Bali & Nusa Tenggara
-            ['namaWilayah' => 'Bali', 'kabupatenKota' => 'Kota Denpasar', 'provinsi' => 'Bali', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Nusa Tenggara Barat', 'kabupatenKota' => 'Kota Mataram', 'provinsi' => 'Nusa Tenggara Barat', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Nusa Tenggara Timur', 'kabupatenKota' => 'Kota Kupang', 'provinsi' => 'Nusa Tenggara Timur', 'tipeWilayah' => 'Provinsi'],
-
-            // Kalimantan
-            ['namaWilayah' => 'Kalimantan Barat', 'kabupatenKota' => 'Kota Pontianak', 'provinsi' => 'Kalimantan Barat', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Kalimantan Tengah', 'kabupatenKota' => 'Kota Palangka Raya', 'provinsi' => 'Kalimantan Tengah', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Kalimantan Selatan', 'kabupatenKota' => 'Kota Banjarmasin', 'provinsi' => 'Kalimantan Selatan', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Kalimantan Timur', 'kabupatenKota' => 'Kota Samarinda', 'provinsi' => 'Kalimantan Timur', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Kalimantan Utara', 'kabupatenKota' => 'Kota Tarakan', 'provinsi' => 'Kalimantan Utara', 'tipeWilayah' => 'Provinsi'],
-
-            // Sulawesi
-            ['namaWilayah' => 'Sulawesi Utara', 'kabupatenKota' => 'Kota Manado', 'provinsi' => 'Sulawesi Utara', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Gorontalo', 'kabupatenKota' => 'Kota Gorontalo', 'provinsi' => 'Gorontalo', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Sulawesi Tengah', 'kabupatenKota' => 'Kota Palu', 'provinsi' => 'Sulawesi Tengah', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Sulawesi Barat', 'kabupatenKota' => 'Kab. Mamuju', 'provinsi' => 'Sulawesi Barat', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Sulawesi Selatan', 'kabupatenKota' => 'Kota Makassar', 'provinsi' => 'Sulawesi Selatan', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Sulawesi Tenggara', 'kabupatenKota' => 'Kota Kendari', 'provinsi' => 'Sulawesi Tenggara', 'tipeWilayah' => 'Provinsi'],
-
-            // Maluku & Papua
-            ['namaWilayah' => 'Maluku', 'kabupatenKota' => 'Kota Ambon', 'provinsi' => 'Maluku', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Maluku Utara', 'kabupatenKota' => 'Kota Ternate', 'provinsi' => 'Maluku Utara', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Papua', 'kabupatenKota' => 'Kota Jayapura', 'provinsi' => 'Papua', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Papua Barat', 'kabupatenKota' => 'Kota Sorong', 'provinsi' => 'Papua Barat', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Papua Tengah', 'kabupatenKota' => 'Kab. Nabire', 'provinsi' => 'Papua Tengah', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Papua Pegunungan', 'kabupatenKota' => 'Kab. Jayawijaya', 'provinsi' => 'Papua Pegunungan', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Papua Barat Daya', 'kabupatenKota' => 'Kota Sorong', 'provinsi' => 'Papua Barat Daya', 'tipeWilayah' => 'Provinsi'],
-            ['namaWilayah' => 'Papua Selatan', 'kabupatenKota' => 'Kab. Merauke', 'provinsi' => 'Papua Selatan', 'tipeWilayah' => 'Kabupaten'],
+        $provinces = [
+            ['code' => '11', 'name' => 'Aceh'],
+            ['code' => '12', 'name' => 'Sumatera Utara'],
+            ['code' => '13', 'name' => 'Sumatera Barat'],
+            ['code' => '14', 'name' => 'Riau'],
+            ['code' => '15', 'name' => 'Jambi'],
+            ['code' => '16', 'name' => 'Sumatera Selatan'],
+            ['code' => '17', 'name' => 'Bengkulu'],
+            ['code' => '18', 'name' => 'Lampung'],
+            ['code' => '19', 'name' => 'Kepulauan Bangka Belitung'],
+            ['code' => '21', 'name' => 'Kepulauan Riau'],
+            ['code' => '31', 'name' => 'DKI Jakarta'],
+            ['code' => '32', 'name' => 'Jawa Barat'],
+            ['code' => '33', 'name' => 'Jawa Tengah'],
+            ['code' => '34', 'name' => 'DI Yogyakarta'],
+            ['code' => '35', 'name' => 'Jawa Timur'],
+            ['code' => '36', 'name' => 'Banten'],
+            ['code' => '51', 'name' => 'Bali'],
+            ['code' => '52', 'name' => 'Nusa Tenggara Barat'],
+            ['code' => '53', 'name' => 'Nusa Tenggara Timur'],
+            ['code' => '61', 'name' => 'Kalimantan Barat'],
+            ['code' => '62', 'name' => 'Kalimantan Tengah'],
+            ['code' => '63', 'name' => 'Kalimantan Selatan'],
+            ['code' => '64', 'name' => 'Kalimantan Timur'],
+            ['code' => '65', 'name' => 'Kalimantan Utara'],
+            ['code' => '71', 'name' => 'Sulawesi Utara'],
+            ['code' => '72', 'name' => 'Sulawesi Tengah'],
+            ['code' => '73', 'name' => 'Sulawesi Selatan'],
+            ['code' => '74', 'name' => 'Sulawesi Tenggara'],
+            ['code' => '75', 'name' => 'Gorontalo'],
+            ['code' => '76', 'name' => 'Sulawesi Barat'],
+            ['code' => '81', 'name' => 'Maluku'],
+            ['code' => '82', 'name' => 'Maluku Utara'],
+            ['code' => '91', 'name' => 'Papua'],
+            ['code' => '92', 'name' => 'Papua Barat'],
+            ['code' => '93', 'name' => 'Papua Selatan'],
+            ['code' => '94', 'name' => 'Papua Tengah'],
+            ['code' => '95', 'name' => 'Papua Pegunungan'],
+            ['code' => '96', 'name' => 'Papua Barat Daya'],
         ];
 
-        foreach ($wilayahList as $wilayah) {
-            Region::create([
-                'namaWilayah' => $wilayah['namaWilayah'],
-                'kabupatenKota' => $wilayah['kabupatenKota'],
-                'provinsi' => $wilayah['provinsi'],
-                'tipeWilayah' => $wilayah['tipeWilayah'],
-            ]);
+        foreach ($provinces as $prov) {
+            Region::firstOrCreate(
+                ['code' => $prov['code']],
+                ['name' => $prov['name']]
+            );
         }
     }
 }

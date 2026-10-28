@@ -6,12 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Region extends Model
 {
-    // Mengizinkan kolom-kolom ini diisi secara massal
     protected $fillable = [
         'name',
-        'email',
-        'password',
-        'region_id', // <-- Pastikan baris ini ada di dalam model User
+        'code',
+        'parent_id',
     ];
 
     /**
@@ -20,5 +18,21 @@ class Region extends Model
     public function users()
     {
         return $this->hasMany(User::class, 'region_id');
+    }
+
+    /**
+     * Relasi parent (Provinsi untuk Kabupaten/Kota nanti).
+     */
+    public function parent()
+    {
+        return $this->belongsTo(Region::class, 'parent_id');
+    }
+
+    /**
+     * Relasi children (Kabupaten/Kota dari Provinsi).
+     */
+    public function children()
+    {
+        return $this->hasMany(Region::class, 'parent_id');
     }
 }

@@ -8,9 +8,6 @@ use Illuminate\Support\Facades\Auth;
 
 class ProfilController extends Controller
 {
-    /**
-     * Menampilkan halaman edit profil publik.
-     */
     public function edit()
     {
         $user = Auth::user();

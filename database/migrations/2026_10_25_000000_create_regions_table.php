@@ -10,10 +10,9 @@ return new class extends Migration
     {
         Schema::create('regions', function (Blueprint $table) {
             $table->id();
-            $table->string('namaWilayah');
-            $table->string('kabupatenKota');
-            $table->string('provinsi');
-            $table->string('tipeWilayah');
+            $table->string('name');
+            $table->string('code')->unique();
+            $table->foreignId('parent_id')->nullable()->constrained('regions')->onDelete('cascade');
             $table->timestamps();
         });
     }
