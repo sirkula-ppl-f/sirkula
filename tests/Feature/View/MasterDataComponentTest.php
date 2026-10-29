@@ -6,11 +6,22 @@ use Tests\TestCase;
 
 class MasterDataComponentTest extends TestCase
 {
-    private function aksiBaris(bool $active, bool $inUse): string
+    private function aksiBaris(bool $active, bool $inUse, ?string $entity = null): string
     {
         return '<x-master-data.row-actions name="Elektronik" dusk-key="elektronik"'
             .' :active="'.($active ? 'true' : 'false').'" :in-use="'.($inUse ? 'true' : 'false').'"'
-            .' edit-url="/contoh/ubah" deactivate-url="/contoh/nonaktifkan" activate-url="/contoh/aktifkan" delete-url="/contoh/hapus" />';
+            .' edit-url="/contoh/ubah" deactivate-url="/contoh/nonaktifkan" activate-url="/contoh/aktifkan" delete-url="/contoh/hapus"'
+            .($entity ? ' entity="'.$entity.'"' : '').' />';
+    }
+
+    /**
+     * Tag pembuka <form> dengan action tertentu.
+     */
+    private function tagForm(string $html, string $action): string
+    {
+        $this->assertSame(1, preg_match('/<form\b[^>]*action="'.preg_quote($action, '/').'"[^>]*>/', $html, $cocok), "Form {$action} tidak ditemukan.");
+
+        return $cocok[0];
     }
 
     public function test_textarea_menampilkan_label_error_dan_nilai(): void
@@ -105,5 +116,69 @@ class MasterDataComponentTest extends TestCase
         $view->assertDontSee('/contoh/hapus', false)
             ->assertDontSee('dusk="delete-elektronik"', false)
             ->assertSee('dusk="deactivate-elektronik"', false);
+    }
+
+    public function test_aksi_baris_tanpa_entity_memakai_teks_konfirmasi_umum(): void
+    {
+        $html = (string) $this->blade($this->aksiBaris(active: true, inUse: false));
+
+        $nonaktifkan = $this->tagForm($html, '/contoh/nonaktifkan');
+        $hapus = $this->tagForm($html, '/contoh/hapus');
+
+        $this->assertStringContainsString('data-submit-once', $nonaktifkan);
+        $this->assertStringContainsString('data-confirm="'.e(__('master-data.confirm.deactivate', ['name' => 'Elektronik'])).'"', $nonaktifkan);
+        $this->assertStringContainsString('data-confirm-title="Nonaktifkan data?"', $nonaktifkan);
+        $this->assertStringContainsString('data-confirm-label="Nonaktifkan"', $nonaktifkan);
+        $this->assertStringNotContainsString('data-confirm-variant', $nonaktifkan);
+
+        $this->assertStringContainsString('data-submit-once', $hapus);
+        $this->assertStringContainsString('data-confirm="Hapus “Elektronik”? Tindakan ini tidak bisa dibatalkan."', $hapus);
+        $this->assertStringContainsString('data-confirm-title="Hapus data?"', $hapus);
+        $this->assertStringContainsString('data-confirm-label="Hapus"', $hapus);
+        $this->assertStringContainsString('data-confirm-variant="danger"', $hapus);
+    }
+
+    public function test_aksi_baris_dengan_entity_memakai_teks_konfirmasi_khusus(): void
+    {
+        $html = (string) $this->blade($this->aksiBaris(active: true, inUse: false, entity: 'categories'));
+
+        $this->assertStringContainsString(
+            'data-confirm="Nonaktifkan kategori “Elektronik”? Kategori nonaktif tidak bisa dipilih untuk listing baru, tetapi listing lama tetap tersimpan."',
+            $this->tagForm($html, '/contoh/nonaktifkan'),
+        );
+        $this->assertStringContainsString('data-confirm-title="Hapus kategori?"', $this->tagForm($html, '/contoh/hapus'));
+        // Label tombol tidak punya teks khusus, jadi memakai teks umum.
+        $this->assertStringContainsString('data-confirm-label="Hapus"', $this->tagForm($html, '/contoh/hapus'));
+
+        $tidakDikenal = (string) $this->blade($this->aksiBaris(active: true, inUse: false, entity: 'tidak-ada'));
+
+        $this->assertStringContainsString('data-confirm-title="Nonaktifkan data?"', $this->tagForm($tidakDikenal, '/contoh/nonaktifkan'));
+    }
+
+    public function test_aksi_aktifkan_tidak_memakai_konfirmasi(): void
+    {
+        $this->blade($this->aksiBaris(active: false, inUse: true, entity: 'materials'))
+            ->assertSee('action="/contoh/aktifkan"', false)
+            ->assertDontSee('data-confirm', false);
+    }
+
+    public function test_dialog_konfirmasi_aksesibel_dan_punya_atribut_dusk(): void
+    {
+        $view = $this->blade('<x-confirm-dialog />');
+
+        $view->assertSee('<dialog', false)
+            ->assertSee('data-confirm-dialog', false)
+            ->assertSee('aria-labelledby="confirm-dialog-title"', false)
+            ->assertSee('id="confirm-dialog-title"', false)
+            ->assertSee('aria-describedby="confirm-dialog-message"', false)
+            ->assertSee('id="confirm-dialog-message"', false)
+            ->assertSee('<form method="dialog"', false)
+            ->assertSee('value="cancel"', false)
+            ->assertSee('autofocus', false)
+            ->assertSee('value="confirm"', false)
+            ->assertSee('dusk="confirm-dialog"', false)
+            ->assertSee('dusk="confirm-dialog-cancel"', false)
+            ->assertSee('dusk="confirm-dialog-confirm"', false)
+            ->assertSeeInOrder(['Konfirmasi tindakan', 'Batal', 'Lanjutkan']);
     }
 }
