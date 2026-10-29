@@ -30,6 +30,16 @@ class MaterialIndexTest extends TestCase
         return route('admin.materials.index', $query);
     }
 
+    /**
+     * Tag pembuka <form> dengan action tertentu.
+     */
+    private function tagForm(string $html, string $action): string
+    {
+        $this->assertSame(1, preg_match('/<form\b[^>]*action="'.preg_quote($action, '/').'"[^>]*>/', $html, $cocok), "Form {$action} tidak ditemukan.");
+
+        return $cocok[0];
+    }
+
     private function jumlahQueryDaftar(): int
     {
         DB::flushQueryLog();
@@ -75,6 +85,35 @@ class MaterialIndexTest extends TestCase
             ->assertSee('tabindex="0"', false)
             ->assertSee('focus-visible:outline-2', false)
             ->assertSee('Daftar material, halaman 1 dari 2');
+    }
+
+    public function test_dialog_konfirmasi_dan_atribut_data_confirm_dengan_nama_ter_escape(): void
+    {
+        $aktif = Material::factory()->create(['name' => 'Kaca <b> "Bening"', 'slug' => 'kaca-bening']);
+        $nonaktif = Material::factory()->inactive()->create(['name' => 'Logam', 'slug' => 'logam']);
+
+        $response = $this->actingAs($this->admin)->get($this->daftar());
+
+        $response->assertOk()
+            ->assertSee('dusk="confirm-dialog"', false)
+            ->assertSee('<dialog', false)
+            ->assertSee('Kaca &lt;b&gt; &quot;Bening&quot;', false)
+            ->assertDontSee('Kaca <b>', false);
+
+        $html = $response->getContent();
+        $nonaktifkan = $this->tagForm($html, route('admin.materials.deactivate', $aktif));
+        $hapus = $this->tagForm($html, route('admin.materials.destroy', $aktif));
+        $aktifkan = $this->tagForm($html, route('admin.materials.activate', $nonaktif));
+
+        $this->assertStringContainsString('data-confirm="Nonaktifkan material “Kaca &lt;b&gt; &quot;Bening&quot;”? Material nonaktif tidak bisa dipilih untuk listing baru, tetapi listing dan harga acuan lama tetap tersimpan."', $nonaktifkan);
+        $this->assertStringContainsString('data-confirm-title="Nonaktifkan material?"', $nonaktifkan);
+        $this->assertStringNotContainsString('data-confirm-variant', $nonaktifkan);
+
+        $this->assertStringContainsString('data-confirm="Hapus material “Kaca &lt;b&gt; &quot;Bening&quot;”? Tindakan ini tidak bisa dibatalkan."', $hapus);
+        $this->assertStringContainsString('data-confirm-title="Hapus material?"', $hapus);
+        $this->assertStringContainsString('data-confirm-variant="danger"', $hapus);
+
+        $this->assertStringNotContainsString('data-confirm', $aktifkan);
     }
 
     public function test_material_yang_dipakai_listing_atau_harga_acuan_ditandai_dan_tombol_hapus_disembunyikan(): void

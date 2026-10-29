@@ -2,7 +2,7 @@
     <dl class="mb-6 flex max-w-2xl flex-wrap gap-x-8 gap-y-2 text-sm">
         <div>
             <dt class="font-medium text-gray-700">Slug</dt>
-            <dd class="text-gray-900" dusk="material-slug">{{ $material->slug }} <span class="text-gray-600">(tidak berubah)</span></dd>
+            <dd class="wrap-anywhere text-gray-900" dusk="material-slug">{{ $material->slug }} <span class="text-gray-600">(tidak berubah)</span></dd>
         </div>
         <div>
             <dt class="font-medium text-gray-700">Status</dt>

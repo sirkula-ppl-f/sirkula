@@ -51,10 +51,16 @@
     </form>
 
     {{-- Di layar sempit tabel di-scroll di dalam wadah ini, halaman tidak ikut bergeser. --}}
-    <div class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-gray-200" role="region" aria-labelledby="judul-tabel-kategori" tabindex="0">
+    <div
+        class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-gray-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+        role="region"
+        aria-label="{{ __('master-data.categories.table_label') }}"
+        tabindex="0"
+        dusk="category-table-region"
+    >
         <table class="min-w-full divide-y divide-gray-200 text-sm" dusk="category-table">
-            <caption id="judul-tabel-kategori" class="sr-only">
-                Daftar kategori, halaman {{ $categories->currentPage() }} dari {{ max($categories->lastPage(), 1) }}
+            <caption class="sr-only">
+                {{ __('master-data.categories.table_caption', ['page' => $categories->currentPage(), 'last' => max($categories->lastPage(), 1)]) }}
             </caption>
 
             <thead class="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
@@ -95,6 +101,7 @@
                                 :deactivate-url="route('admin.categories.deactivate', $category)"
                                 :activate-url="route('admin.categories.activate', $category)"
                                 :delete-url="route('admin.categories.destroy', $category)"
+                                entity="categories"
                             />
                         </td>
                     </tr>
@@ -112,4 +119,6 @@
     <div class="mt-4">
         {{ $categories->links() }}
     </div>
+
+    <x-confirm-dialog />
 </x-layouts.app>

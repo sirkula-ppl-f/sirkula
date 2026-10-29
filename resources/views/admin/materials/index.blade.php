@@ -90,6 +90,7 @@
                                 :deactivate-url="route('admin.materials.deactivate', $material)"
                                 :activate-url="route('admin.materials.activate', $material)"
                                 :delete-url="route('admin.materials.destroy', $material)"
+                                entity="materials"
                             />
                         </td>
                     </tr>
@@ -107,4 +108,6 @@
     <div class="mt-4">
         {{ $materials->links() }}
     </div>
+
+    <x-confirm-dialog />
 </x-layouts.app>

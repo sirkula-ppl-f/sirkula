@@ -30,6 +30,16 @@ class CategoryIndexTest extends TestCase
         return route('admin.categories.index', $query);
     }
 
+    /**
+     * Tag pembuka <form> dengan action tertentu.
+     */
+    private function tagForm(string $html, string $action): string
+    {
+        $this->assertSame(1, preg_match('/<form\b[^>]*action="'.preg_quote($action, '/').'"[^>]*>/', $html, $cocok), "Form {$action} tidak ditemukan.");
+
+        return $cocok[0];
+    }
+
     public function test_menampilkan_data_kategori_dengan_status_tipe_dan_aksi(): void
     {
         Category::factory()->forTypes(ListingType::Preloved, ListingType::Upcycle)->create(['name' => 'Pakaian', 'slug' => 'pakaian']);
@@ -48,6 +58,53 @@ class CategoryIndexTest extends TestCase
             ->assertSee('href="'.route('admin.categories.create').'"', false)
             ->assertSee('role="region"', false)
             ->assertSee('<th scope="col"', false);
+    }
+
+    public function test_wadah_tabel_punya_label_dan_caption_dari_lang_serta_fokus_terlihat(): void
+    {
+        Category::factory()->count(16)->create();
+
+        $this->actingAs($this->admin)
+            ->get($this->daftar())
+            ->assertOk()
+            ->assertSee('role="region"', false)
+            ->assertSee('aria-label="'.__('master-data.categories.table_label').'"', false)
+            ->assertSee('aria-label="Tabel daftar kategori"', false)
+            ->assertSee('tabindex="0"', false)
+            ->assertSee('focus-visible:outline-2', false)
+            ->assertSee('dusk="category-table-region"', false)
+            ->assertDontSee('aria-labelledby="judul-tabel-kategori"', false)
+            ->assertSee(__('master-data.categories.table_caption', ['page' => 1, 'last' => 2]))
+            ->assertSee('Daftar kategori, halaman 1 dari 2');
+    }
+
+    public function test_dialog_konfirmasi_dan_atribut_data_confirm_dengan_nama_ter_escape(): void
+    {
+        $nama = 'Kaca <b> "Bening"';
+        $aktif = Category::factory()->create(['name' => $nama, 'slug' => 'kaca-bening']);
+        $nonaktif = Category::factory()->inactive()->create(['name' => 'Buku', 'slug' => 'buku']);
+
+        $response = $this->actingAs($this->admin)->get($this->daftar());
+
+        $response->assertOk()
+            ->assertSee('dusk="confirm-dialog"', false)
+            ->assertSee('<dialog', false)
+            ->assertSee('Kaca &lt;b&gt; &quot;Bening&quot;', false)
+            ->assertDontSee('Kaca <b>', false);
+
+        $html = $response->getContent();
+        $nonaktifkan = $this->tagForm($html, route('admin.categories.deactivate', $aktif));
+        $hapus = $this->tagForm($html, route('admin.categories.destroy', $aktif));
+        $aktifkan = $this->tagForm($html, route('admin.categories.activate', $nonaktif));
+
+        $this->assertStringContainsString('data-confirm="Nonaktifkan kategori “Kaca &lt;b&gt; &quot;Bening&quot;”? Kategori nonaktif tidak bisa dipilih untuk listing baru, tetapi listing lama tetap tersimpan."', $nonaktifkan);
+        $this->assertStringContainsString('data-confirm-title="Nonaktifkan kategori?"', $nonaktifkan);
+        $this->assertStringNotContainsString('data-confirm-variant', $nonaktifkan);
+
+        $this->assertStringContainsString('data-confirm="Hapus kategori “Kaca &lt;b&gt; &quot;Bening&quot;”? Tindakan ini tidak bisa dibatalkan."', $hapus);
+        $this->assertStringContainsString('data-confirm-variant="danger"', $hapus);
+
+        $this->assertStringNotContainsString('data-confirm', $aktifkan);
     }
 
     public function test_kategori_yang_dipakai_ditandai_dan_tombol_hapus_disembunyikan(): void
