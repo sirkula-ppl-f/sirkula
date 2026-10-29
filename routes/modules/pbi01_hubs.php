@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\HubController;
 use App\Http\Controllers\Admin\HubManagerController;
+use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'active', 'role:ADMIN'])
     ->prefix('admin')
