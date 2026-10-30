@@ -10,6 +10,7 @@
 
     if ($user->isAdmin()) {
         $links[] = ['label' => 'Admin', 'route' => 'admin.dashboard'];
+        $links[] = ['label' => 'Kelola Akun', 'route' => 'admin.users.index'];
     }
 @endphp
 

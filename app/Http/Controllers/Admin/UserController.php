@@ -38,7 +38,12 @@ class UserController extends Controller
         // Ambil data dengan pagination (10 user per halaman)
         $users = $query->latest()->paginate(10)->withQueryString();
 
-        return view('admin.users.index', compact('users'));
+        $activeAdminCount = User::query()
+            ->where('role', UserRole::Admin)
+            ->where('status', UserStatus::Active)
+            ->count();
+
+        return view('admin.users.index', compact('users', 'activeAdminCount'));
     }
 
     /**
@@ -47,6 +52,8 @@ class UserController extends Controller
     public function suspend(Request $request, User $user): RedirectResponse
     {
         // 1. Validasi input: alasan penangguhan wajib diisi
+        session()->flash('selected_user_id', $user->id);
+
         $validated = $request->validate([
             'reason' => ['required', 'string', 'min:5', 'max:500'],
         ], [
@@ -107,8 +114,14 @@ class UserController extends Controller
      */
     public function activate(Request $request, User $user): RedirectResponse
     {
+        session()->flash('selected_user_id', $user->id);
+
         $validated = $request->validate([
-            'reason' => ['nullable', 'string', 'max:500'],
+            'reason' => ['required', 'string', 'min:5', 'max:500'],
+        ], [
+            'reason.required' => 'Alasan pengaktifan akun wajib diisi.',
+            'reason.min' => 'Alasan pengaktifan minimal 5 karakter.',
+            'reason.max' => 'Alasan pengaktifan maksimal 500 karakter.',
         ]);
 
         // Cek jika akun sudah berstatus aktif
@@ -127,7 +140,7 @@ class UserController extends Controller
                 'entity_type' => User::class,
                 'entity_id' => $user->id,
                 'result' => 'SUCCESS',
-                'reason' => $validated['reason'] ?? 'Akun diaktifkan kembali oleh admin.',
+                'reason' => $validated['reason'],
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
                 'created_at' => now(),
