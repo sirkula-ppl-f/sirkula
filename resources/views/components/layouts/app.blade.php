@@ -6,6 +6,7 @@
     // Tautan navbar sesuai role. Tambahkan tautan modul baru di sini.
     $links = [
         ['label' => 'Beranda', 'route' => 'dashboard'],
+        ['label' => 'Keranjang', 'route' => 'cart.index'],
     ];
 
     if ($user->isAdmin()) {
