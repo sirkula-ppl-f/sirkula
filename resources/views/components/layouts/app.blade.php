@@ -7,6 +7,7 @@
     // Key opsional: 'active' (pola routeIs untuk status aktif, bawaan 'route') dan 'dusk'.
     $links = [
         ['label' => 'Beranda', 'route' => 'dashboard'],
+        ['label' => 'Keranjang', 'route' => 'cart.index'],
     ];
 
     if ($user->isAdmin()) {
