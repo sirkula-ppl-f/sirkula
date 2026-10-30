@@ -68,6 +68,11 @@ class User extends Authenticatable
         return $this->status === UserStatus::Active;
     }
 
+    public function region()
+    {
+        return $this->belongsTo(Region::class, 'region_id');
+    }
+
     /**
      * Cabut semua sesi login user ini di semua perangkat.
      *
