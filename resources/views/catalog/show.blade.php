@@ -1,121 +1,73 @@
-```blade
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $listing['title'] }} - Sirkula</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            background: #F7FAF7;
-            color: #171C1A;
-            font-family: Inter, Arial, sans-serif;
-        }
-        a { color: inherit; text-decoration: none; }
-        header {
-            padding: 20px 5%;
-            background: white;
-            border-bottom: 1px solid #E3E8E6;
-        }
-        .brand {
-            color: #178C5C;
-            font-size: 21px;
-            font-weight: 700;
-        }
-        main {
-            max-width: 900px;
-            margin: 35px auto;
-            padding: 0 20px;
-        }
-        .back {
-            display: inline-block;
-            margin-bottom: 22px;
-            color: #178C5C;
-            font-weight: 600;
-        }
-        .detail {
-            padding: 28px;
-            background: white;
-            border: 1px solid #E3E8E6;
-            border-radius: 12px;
-        }
-        .badge {
-            display: inline-block;
-            padding: 6px 10px;
-            background: #E0F5E8;
-            color: #127345;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 700;
-        }
-        h1 { margin: 18px 0 12px; }
-        .price {
-            color: #178C5C;
-            font-size: 24px;
-            font-weight: 700;
-        }
-        .meta {
-            color: #6B7570;
-            line-height: 1.8;
-        }
-        .description {
-            margin-top: 28px;
-            line-height: 1.8;
-        }
-        .button {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 12px 18px;
-            background: #178C5C;
-            color: white;
-            border-radius: 8px;
-            font-weight: 600;
-        }
-    </style>
-</head>
-<body>
-    <header>
-        <a class="brand" href="{{ route('catalog.index') }}">Sirkula</a>
-    </header>
 
-    <main>
-        <a class="back" href="{{ route('catalog.index') }}">
+<x-layouts.app :title="$listing['title']">
+    <div class="mx-auto max-w-4xl">
+        <a
+            href="{{ route('catalog.index') }}"
+            class="mb-6 inline-flex items-center font-medium text-brand-700 hover:underline"
+        >
             &larr; Kembali ke katalog
         </a>
 
-        <article class="detail">
-            <span class="badge">{{ $listing['type'] }}</span>
+        <article class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
+            <span class="inline-flex rounded-md bg-green-100 px-3 py-1.5 text-xs font-bold text-green-800">
+                {{ $listing['type'] }}
+            </span>
 
-            <h1>{{ $listing['title'] }}</h1>
+            <h2 class="mt-5 text-2xl font-bold text-gray-900">
+                {{ $listing['title'] }}
+            </h2>
 
-            <p class="price">
+            <p class="mt-4 text-2xl font-bold text-brand-700">
                 Rp{{ number_format($listing['price'], 0, ',', '.') }}
-                @if(!empty($listing['unit']))
-                    / {{ $listing['unit'] }}
+                @if (! empty($listing['unit']))
+                    <span class="text-base font-medium text-gray-600">
+                        / {{ $listing['unit'] }}
+                    </span>
                 @endif
             </p>
 
-            <div class="meta">
-                <div>Kategori: {{ $listing['category'] }}</div>
-                <div>Kondisi: {{ $listing['condition'] }}</div>
-                <div>Wilayah: {{ $listing['region'] }}</div>
-                <div>Hub: {{ $listing['hub'] }}</div>
-                <div>Stok: {{ $listing['stock'] }}</div>
+            <div class="mt-6 grid gap-4 border-t border-gray-100 pt-6 sm:grid-cols-2">
+                <div>
+                    <p class="text-sm text-gray-500">Kategori</p>
+                    <p class="mt-1 font-medium text-gray-900">{{ $listing['category'] }}</p>
+                </div>
+
+                <div>
+                    <p class="text-sm text-gray-500">Kondisi</p>
+                    <p class="mt-1 font-medium text-gray-900">{{ $listing['condition'] }}</p>
+                </div>
+
+                <div>
+                    <p class="text-sm text-gray-500">Wilayah</p>
+                    <p class="mt-1 font-medium text-gray-900">{{ $listing['region'] }}</p>
+                </div>
+
+                <div>
+                    <p class="text-sm text-gray-500">Hub</p>
+                    <p class="mt-1 font-medium text-gray-900">{{ $listing['hub'] }}</p>
+                </div>
+
+                <div>
+                    <p class="text-sm text-gray-500">Stok</p>
+                    <p class="mt-1 font-medium text-gray-900">{{ $listing['stock'] }}</p>
+                </div>
             </div>
 
-            <section class="description">
-                <h2>Deskripsi produk</h2>
-                <p>{{ $listing['description'] }}</p>
+            <section class="mt-8 border-t border-gray-100 pt-6">
+                <h3 class="text-lg font-semibold text-gray-900">Deskripsi produk</h3>
+                <p class="mt-3 leading-relaxed text-gray-600">
+                    {{ $listing['description'] }}
+                </p>
             </section>
 
-            <a class="button" href="{{ route('catalog.index') }}">
-                Kembali ke katalog
-            </a>
+            <div class="mt-8">
+                <a
+                    href="{{ route('catalog.index') }}"
+                    class="inline-flex rounded-lg bg-brand-700 px-5 py-3 font-semibold text-white hover:opacity-90"
+                >
+                    Kembali ke katalog
+                </a>
+            </div>
         </article>
-    </main>
-</body>
-</html>
-```
+    </div>
+</x-layouts.app>

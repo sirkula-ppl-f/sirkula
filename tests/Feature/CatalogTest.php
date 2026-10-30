@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -51,6 +52,31 @@ class CatalogTest extends TestCase
         $response->assertOk();
         $response->assertSee('Botol PET Terpilah');
         $response->assertDontSee('Sepeda Lipat Bekas');
+    }
+
+    public function test_guest_can_view_catalog_listing_detail(): void
+    {
+        $response = $this->get(route('catalog.show', [
+            'id' => 1,
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('Sepeda Lipat Bekas');
+        $response->assertSee('Olahraga dan Hobi');
+        $response->assertSee('Deskripsi produk');
+    }
+
+    public function test_authenticated_user_can_view_catalog_listing_detail(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('catalog.show', [
+            'id' => 1,
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('Sepeda Lipat Bekas');
+        $response->assertSee('Olahraga dan Hobi');
     }
 
     public function test_catalog_show_returns_404_for_unknown_listing(): void
