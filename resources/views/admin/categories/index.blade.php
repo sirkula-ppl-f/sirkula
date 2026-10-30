@@ -50,9 +50,12 @@
         </div>
     </form>
 
-    {{-- Di layar sempit tabel di-scroll di dalam wadah ini, halaman tidak ikut bergeser. --}}
+    {{--
+        Di layar sempit tabel di-scroll di dalam wadah ini, halaman tidak ikut bergeser.
+        Kelas relative membuat span sr-only (position:absolute) di tombol aksi ikut terpotong wadah.
+    --}}
     <div
-        class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-gray-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+        class="relative overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-gray-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
         role="region"
         aria-label="{{ __('master-data.categories.table_label') }}"
         tabindex="0"
