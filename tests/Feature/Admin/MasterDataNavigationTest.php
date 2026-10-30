@@ -88,4 +88,35 @@ class MasterDataNavigationTest extends TestCase
         $this->assertStringNotContainsString('aria-current', $this->tagTautan($html, 'dusk="'.$navLain.'"'));
         $this->assertStringNotContainsString('aria-current', $this->tagTautan($html, 'href="'.route('admin.dashboard').'"'));
     }
+
+    public function test_dialog_konfirmasi_hanya_dipasang_di_halaman_daftar(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $category = Category::factory()->create();
+        $material = Material::factory()->create();
+
+        // Dialog dipasang per halaman, bukan di layout. true = halaman berisi aksi data-confirm.
+        $halaman = [
+            route('admin.categories.index') => true,
+            route('admin.materials.index') => true,
+            route('admin.categories.create') => false,
+            route('admin.categories.edit', $category) => false,
+            route('admin.materials.create') => false,
+            route('admin.materials.edit', $material) => false,
+            route('dashboard') => false,
+            route('admin.dashboard') => false,
+        ];
+
+        foreach ($halaman as $url => $denganDialog) {
+            $html = $this->actingAs($admin)->get($url)->assertOk()->getContent();
+
+            $this->assertSame($denganDialog ? 1 : 0, substr_count($html, '<dialog'), "Jumlah dialog konfirmasi di {$url} salah.");
+
+            if ($denganDialog) {
+                $this->assertStringContainsString('data-confirm="', $html, "Halaman {$url} harus punya aksi data-confirm.");
+            } else {
+                $this->assertStringNotContainsString('data-confirm', $html, "Halaman {$url} tidak boleh memuat data-confirm.");
+            }
+        }
+    }
 }
