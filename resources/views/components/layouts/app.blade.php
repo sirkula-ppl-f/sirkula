@@ -1,3 +1,4 @@
+
 @props(['title' => null])
 
 @php
@@ -5,15 +6,17 @@
 
     // Tautan navbar sesuai role. Tambahkan tautan modul baru di sini.
     // Key opsional: 'active' (pola routeIs untuk status aktif, bawaan 'route') dan 'dusk'.
-    $links = [
-        ['label' => 'Beranda', 'route' => 'dashboard'],
-        ['label' => 'Keranjang', 'route' => 'cart.index'],
-    ];
+    $links = [];
 
-    if ($user->isAdmin()) {
-        $links[] = ['label' => 'Admin', 'route' => 'admin.dashboard'];
-        $links[] = ['label' => __('master-data.categories.nav'), 'route' => 'admin.categories.index', 'active' => 'admin.categories.*', 'dusk' => 'nav-categories'];
-        $links[] = ['label' => __('master-data.materials.nav'), 'route' => 'admin.materials.index', 'active' => 'admin.materials.*', 'dusk' => 'nav-materials'];
+    if ($user) {
+        $links[] = ['label' => 'Beranda', 'route' => 'dashboard'];
+        $links[] = ['label' => 'Keranjang', 'route' => 'cart.index'];
+
+        if ($user->isAdmin()) {
+            $links[] = ['label' => 'Admin', 'route' => 'admin.dashboard'];
+            $links[] = ['label' => __('master-data.categories.nav'), 'route' => 'admin.categories.index', 'active' => 'admin.categories.*', 'dusk' => 'nav-categories'];
+            $links[] = ['label' => __('master-data.materials.nav'), 'route' => 'admin.materials.index', 'active' => 'admin.materials.*', 'dusk' => 'nav-materials'];
+        }
     }
 @endphp
 
@@ -29,45 +32,74 @@
 
         <header class="border-b border-gray-200 bg-white">
             <nav aria-label="Navigasi utama" class="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
-                <a href="{{ route('dashboard') }}" class="text-lg font-semibold text-brand-700">
+                <a
+                    href="{{ $user ? route('dashboard') : route('catalog.index') }}"
+                    class="text-lg font-semibold text-brand-700"
+                >
                     {{ config('app.name') }}
                 </a>
 
                 <ul class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium">
-                    @foreach ($links as $link)
-                        @php($isCurrent = request()->routeIs($link['active'] ?? $link['route']))
+                    @auth
+                        @foreach ($links as $link)
+                            @php($isCurrent = request()->routeIs($link['active'] ?? $link['route']))
+                            <li>
+                                <a
+                                    href="{{ route($link['route']) }}"
+                                    @class([
+                                        'rounded-md px-1 py-0.5',
+                                        'text-brand-700 underline underline-offset-4' => $isCurrent,
+                                        'text-gray-700 hover:text-brand-700' => ! $isCurrent,
+                                    ])
+                                    @if ($isCurrent) aria-current="page" @endif
+                                    @isset($link['dusk']) dusk="{{ $link['dusk'] }}" @endisset
+                                >
+                                    {{ $link['label'] }}
+                                </a>
+                            </li>
+                        @endforeach
+                    @else
                         <li>
                             <a
-                                href="{{ route($link['route']) }}"
+                                href="{{ route('catalog.index') }}"
                                 @class([
                                     'rounded-md px-1 py-0.5',
-                                    'text-brand-700 underline underline-offset-4' => $isCurrent,
-                                    'text-gray-700 hover:text-brand-700' => ! $isCurrent,
+                                    'text-brand-700 underline underline-offset-4' => request()->routeIs('catalog.*'),
+                                    'text-gray-700 hover:text-brand-700' => ! request()->routeIs('catalog.*'),
                                 ])
-                                @if ($isCurrent) aria-current="page" @endif
-                                @isset($link['dusk']) dusk="{{ $link['dusk'] }}" @endisset
+                                @if (request()->routeIs('catalog.*')) aria-current="page" @endif
                             >
-                                {{ $link['label'] }}
+                                Katalog
                             </a>
                         </li>
-                    @endforeach
+                    @endauth
                 </ul>
 
-                <div class="ms-auto flex items-center gap-3 text-sm">
-                    <span class="max-w-40 truncate text-gray-700" dusk="nav-user-name">{{ $user->name }}</span>
+                @auth
+                    <div class="ms-auto flex items-center gap-3 text-sm">
+                        <span class="max-w-40 truncate text-gray-700" dusk="nav-user-name">{{ $user->name }}</span>
 
-                    {{-- Logout hanya lewat POST + CSRF, tidak ada tautan GET. --}}
-                    <form method="POST" action="{{ route('logout') }}" data-submit-once>
-                        @csrf
-                        <button
-                            type="submit"
-                            class="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
-                            dusk="logout-button"
-                        >
-                            Keluar
-                        </button>
-                    </form>
-                </div>
+                        <form method="POST" action="{{ route('logout') }}" data-submit-once>
+                            @csrf
+                            <button
+                                type="submit"
+                                class="rounded-md border border-gray-300 px-3 py-1.5 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                                dusk="logout-button"
+                            >
+                                Keluar
+                            </button>
+                        </form>
+                    </div>
+                @else
+                    <div class="ms-auto flex items-center gap-3 text-sm">
+                        <a href="{{ route('login') }}" class="font-medium text-gray-700 hover:text-brand-700">
+                            Masuk
+                        </a>
+                        <a href="{{ route('register') }}" class="rounded-md bg-brand-700 px-3 py-1.5 font-medium text-white hover:opacity-90">
+                            Daftar
+                        </a>
+                    </div>
+                @endauth
             </nav>
         </header>
 

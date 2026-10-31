@@ -9,8 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * STUB untuk PBI-11. Diganti oleh model Listing asli dari PBI-07/08.
- * Yang dipakai keranjang: seller(), purchasable(), isPurchasable(), price, stock.
+ * Model listing untuk katalog dan keranjang.
  */
 class Listing extends Model
 {
@@ -24,6 +23,8 @@ class Listing extends Model
     protected $guarded = [];
 
     /**
+     * Relasi ke penjual.
+     *
      * @return BelongsTo<User, $this>
      */
     public function seller(): BelongsTo
@@ -32,8 +33,18 @@ class Listing extends Model
     }
 
     /**
-     * Aturan tayang FR-012: disetujui, aktif, stok > 0, penjual aktif.
-     * (Syarat hub aktif ditambahkan setelah PBI-01 selesai.)
+     * Relasi ke kategori listing.
+     *
+     * @return BelongsTo<Category, $this>
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'category_id');
+    }
+
+    /**
+     * Aturan listing yang boleh ditampilkan:
+     * disetujui, aktif, stok tersedia, dan penjual aktif.
      */
     public function scopePurchasable(Builder $query): void
     {
