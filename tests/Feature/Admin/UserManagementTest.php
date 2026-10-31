@@ -63,6 +63,13 @@ class UserManagementTest extends TestCase
             ->assertOk()
             ->assertSee('Dewi Anggraini')
             ->assertDontSee('Budi Hartono');
+
+        // Filter tidak valid atau search berupa array di URL diabaikan tanpa error 500
+        $this->actingAs($admin)
+            ->get(route('admin.users.index', ['status' => 'TIDAK_VALID', 'search' => ['a', 'b']]))
+            ->assertOk()
+            ->assertSee('Dewi Anggraini')
+            ->assertSee('Budi Hartono');
     }
 
     public function test_admin_berhasil_menangguhkan_akun_warga_mencabut_sesi_dan_mencatat_audit_log(): void

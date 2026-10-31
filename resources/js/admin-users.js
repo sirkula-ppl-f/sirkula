@@ -1,8 +1,9 @@
 /**
  * Perilaku interaktif halaman Admin - Kelola Status Akun (FR-004) dengan JavaScript murni.
  *
- * - Memilih baris pengguna dari tabel untuk memperbarui panel detail & aksi di samping.
+ * - Memilih baris pengguna dari tabel untuk memperbarui panel detail & aksi di samping (tanpa reload).
  * - Membuka <dialog> konfirmasi bawaan browser sebelum menangguhkan atau mengaktifkan kembali akun.
+ * - Mengembalikan fokus ke tombol pemicu saat dialog ditutup tanpa konfirmasi.
  */
 
 export function initAdminUsers() {
@@ -19,7 +20,7 @@ export function initAdminUsers() {
     const badgeEl = document.getElementById('panel-user-status-badge');
     const guardNoticeEl = document.getElementById('panel-guard-notice');
     const reasonInput = document.getElementById('reason-textarea');
-    const reasonError = document.getElementById('reason-client-error');
+    const reasonError = document.getElementById('reason-error');
     const submitBtn = document.getElementById('panel-submit-button');
 
     const dialogTitle = document.getElementById('dialog-title');
@@ -29,6 +30,7 @@ export function initAdminUsers() {
     const dialogConfirmBtn = document.getElementById('dialog-confirm-button');
 
     let confirmedByDialog = false;
+    let pressedOnBackdrop = false;
 
     function clearClientError() {
         if (!reasonError) {
@@ -37,6 +39,9 @@ export function initAdminUsers() {
         reasonError.textContent = '';
         reasonError.classList.add('hidden');
         reasonInput?.removeAttribute('aria-invalid');
+        reasonInput?.removeAttribute('aria-describedby');
+        reasonInput?.classList.remove('border-red-600');
+        reasonInput?.classList.add('border-gray-300', 'focus:border-brand-600');
     }
 
     function showClientError(message) {
@@ -46,16 +51,26 @@ export function initAdminUsers() {
         reasonError.textContent = message;
         reasonError.classList.remove('hidden');
         reasonInput?.setAttribute('aria-invalid', 'true');
+        reasonInput?.setAttribute('aria-describedby', 'reason-error');
+        reasonInput?.classList.remove('border-gray-300', 'focus:border-brand-600');
+        reasonInput?.classList.add('border-red-600');
         reasonInput?.focus();
     }
 
-    // 1. Klik tombol "Pilih" pada baris tabel pengguna
+    // 1. Klik tautan "Pilih" pada baris tabel pengguna (progressive enhancement)
     document.addEventListener('click', (event) => {
         const trigger = event.target.closest('[data-select-user]');
 
         if (!trigger) {
             return;
         }
+
+        // Biarkan klik dengan modifier (Ctrl/Cmd/Shift/klik tengah) membuka tab baru seperti biasa
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+            return;
+        }
+
+        event.preventDefault();
 
         const userId = trigger.dataset.userId;
         const userName = trigger.dataset.userName || '';
@@ -71,7 +86,7 @@ export function initAdminUsers() {
 
         // Highlight baris terpilih
         document.querySelectorAll('tr[data-user-row]').forEach((row) => {
-            row.classList.toggle('bg-[#f7faf7]', row.dataset.userRow === userId);
+            row.classList.toggle('bg-brand-50/40', row.dataset.userRow === userId);
         });
 
         // Perbarui teks panel
@@ -82,13 +97,15 @@ export function initAdminUsers() {
             emailEl.textContent = userEmail;
         }
 
-        // Perbarui badge status
+        // Perbarui badge status (konsisten dengan <x-status-badge />)
         if (badgeEl) {
             badgeEl.textContent = userStatusLabel;
-            badgeEl.classList.toggle('bg-[#e0f5e8]', isActive);
-            badgeEl.classList.toggle('text-[#127345]', isActive);
-            badgeEl.classList.toggle('bg-[#ffe5e5]', !isActive);
-            badgeEl.classList.toggle('text-[#b22626]', !isActive);
+            badgeEl.classList.toggle('bg-brand-50', isActive);
+            badgeEl.classList.toggle('text-brand-800', isActive);
+            badgeEl.classList.toggle('ring-brand-100', isActive);
+            badgeEl.classList.toggle('bg-red-50', !isActive);
+            badgeEl.classList.toggle('text-red-700', !isActive);
+            badgeEl.classList.toggle('ring-red-200', !isActive);
         }
 
         // Perbarui pesan guard bila ada (diri sendiri / admin terakhir)
@@ -109,17 +126,26 @@ export function initAdminUsers() {
 
         clearClientError();
 
+        // Tombol aksi konsisten dengan gaya row-actions & button di Kategori/Material
         if (submitBtn) {
             submitBtn.disabled = !canModify;
             submitBtn.textContent = isActive ? 'Tangguhkan akun' : 'Aktifkan kembali';
-            submitBtn.classList.toggle('bg-[#c33]', isActive);
-            submitBtn.classList.toggle('hover:bg-[#b22626]', isActive);
-            submitBtn.classList.toggle('bg-[#178c5c]', !isActive);
-            submitBtn.classList.toggle('hover:bg-[#127345]', !isActive);
+            submitBtn.classList.toggle('border-red-300', isActive);
+            submitBtn.classList.toggle('bg-white', isActive);
+            submitBtn.classList.toggle('text-red-700', isActive);
+            submitBtn.classList.toggle('hover:bg-red-50', isActive);
+            submitBtn.classList.toggle('border-brand-600', !isActive);
+            submitBtn.classList.toggle('bg-brand-600', !isActive);
+            submitBtn.classList.toggle('text-white', !isActive);
+            submitBtn.classList.toggle('hover:bg-brand-700', !isActive);
+        }
+
+        if (window.innerWidth < 1024) {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
         if (canModify && reasonInput) {
-            reasonInput.focus();
+            reasonInput.focus({ preventScroll: window.innerWidth < 1024 });
         }
     });
 
@@ -159,16 +185,10 @@ export function initAdminUsers() {
                 const isSuspending = form.dataset.currentStatus === 'ACTIVE';
                 const targetName = form.dataset.targetName || 'pengguna ini';
 
-                // Sesuaikan tampilan dialog dengan jenis aksi (Tangguhkan vs Aktifkan)
-                dialog.classList.toggle('border-[#c33]', isSuspending);
-                dialog.classList.toggle('border-[#178c5c]', !isSuspending);
-
                 if (dialogTitle) {
                     dialogTitle.textContent = isSuspending
-                        ? `Tangguhkan akun ${targetName}?`
-                        : `Aktifkan kembali akun ${targetName}?`;
-                    dialogTitle.classList.toggle('text-[#c33]', isSuspending);
-                    dialogTitle.classList.toggle('text-[#178c5c]', !isSuspending);
+                        ? `Tangguhkan akun “${targetName}”?`
+                        : `Aktifkan kembali akun “${targetName}”?`;
                 }
 
                 if (dialogDesc) {
@@ -183,31 +203,47 @@ export function initAdminUsers() {
 
                 if (dialogConfirmBtn) {
                     dialogConfirmBtn.textContent = isSuspending ? 'Ya, tangguhkan' : 'Ya, aktifkan';
-                    dialogConfirmBtn.classList.toggle('bg-[#c33]', isSuspending);
-                    dialogConfirmBtn.classList.toggle('hover:bg-[#b22626]', isSuspending);
-                    dialogConfirmBtn.classList.toggle('bg-[#178c5c]', !isSuspending);
-                    dialogConfirmBtn.classList.toggle('hover:bg-[#127345]', !isSuspending);
+                    dialogConfirmBtn.classList.toggle('border-red-300', isSuspending);
+                    dialogConfirmBtn.classList.toggle('bg-white', isSuspending);
+                    dialogConfirmBtn.classList.toggle('text-red-700', isSuspending);
+                    dialogConfirmBtn.classList.toggle('hover:bg-red-50', isSuspending);
+                    dialogConfirmBtn.classList.toggle('border-brand-600', !isSuspending);
+                    dialogConfirmBtn.classList.toggle('bg-brand-600', !isSuspending);
+                    dialogConfirmBtn.classList.toggle('text-white', !isSuspending);
+                    dialogConfirmBtn.classList.toggle('hover:bg-brand-700', !isSuspending);
                 }
 
+                dialog.returnValue = '';
                 dialog.showModal();
             },
             true // capture phase agar berjalan sebelum initSubmitOnce() di forms.js
         );
 
         dialogCancelBtn?.addEventListener('click', () => {
-            dialog.close();
+            dialog.close('cancel');
         });
 
-        // Tutup dialog jika klik di area backdrop luar kotak dialog
+        // Tutup lewat backdrop hanya bila pointerdown dan click sama-sama mengenai <dialog>
+        dialog.addEventListener('pointerdown', (event) => {
+            pressedOnBackdrop = event.target === dialog;
+        });
+
         dialog.addEventListener('click', (event) => {
-            if (event.target === dialog) {
-                dialog.close();
+            if (pressedOnBackdrop && event.target === dialog) {
+                dialog.close('cancel');
+            }
+            pressedOnBackdrop = false;
+        });
+
+        dialog.addEventListener('close', () => {
+            if (dialog.returnValue !== 'confirm') {
+                submitBtn?.focus();
             }
         });
 
         dialogConfirmBtn?.addEventListener('click', () => {
             confirmedByDialog = true;
-            dialog.close();
+            dialog.close('confirm');
 
             if (typeof form.requestSubmit === 'function') {
                 form.requestSubmit();

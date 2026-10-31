@@ -21,18 +21,25 @@ class UserController extends Controller
     {
         $query = User::query();
 
-        // 1. Fitur pencarian nama atau email (FR-004)
-        if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+        // 1. Fitur pencarian nama atau email (FR-004), aman terhadap input array & wildcard LIKE
+        $rawSearch = $request->query('search');
+        $search = is_string($rawSearch) ? trim($rawSearch) : '';
+
+        if ($search !== '') {
+            $escaped = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $search);
+
+            $query->where(function ($q) use ($escaped) {
+                $q->whereRaw("name LIKE ? ESCAPE '!'", ["%{$escaped}%"])
+                    ->orWhereRaw("email LIKE ? ESCAPE '!'", ["%{$escaped}%"]);
             });
         }
 
-        // 2. Filter berdasarkan status akun (ACTIVE / SUSPENDED)
-        if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
+        // 2. Filter berdasarkan status akun (ACTIVE / SUSPENDED), abaikan nilai yang tidak valid
+        $rawStatus = $request->query('status');
+        $status = is_string($rawStatus) ? UserStatus::tryFrom($rawStatus) : null;
+
+        if ($status !== null) {
+            $query->where('status', $status);
         }
 
         // Ambil data dengan pagination (10 user per halaman)
