@@ -16,7 +16,7 @@
 
         {{-- Notifikasi Sukses --}}
         @if (session('success'))
-            <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl relative shadow-sm" role="alert">
+            <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl relative shadow-sm" role="alert" dusk="alert">
                <span class="block sm:inline">{{ session('success') }}</span>
             </div>
         @endif
@@ -41,6 +41,7 @@
                                type="text" 
                                value="{{ old('name', $user->name) }}" 
                                required 
+                               dusk="name-input"
                                aria-invalid="{{ $errors->has('name') ? 'true' : 'false' }}"
                                @error('name') aria-describedby="name-error" @enderror />
                         @error('name') 
@@ -58,6 +59,7 @@
                                     id="wilayah" 
                                     name="region_id" 
                                     required
+                                    dusk="region-input"
                                     aria-invalid="{{ $errors->has('region_id') ? 'true' : 'false' }}"
                                     @error('region_id') aria-describedby="region-error" @enderror>
                                 <option value="">Pilih Wilayah</option>
@@ -91,7 +93,7 @@
 
                     <!-- Action Buttons Group -->
                     <div class="flex items-center space-x-3.5 pt-1">
-                        <button class="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-xl transition duration-150 ease-in-out shadow-sm" type="submit">
+                        <button class="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-xl transition duration-150 ease-in-out shadow-sm" type="submit" dusk="save-profile-button">
                             Simpan perubahan
                         </button>
                         <a href="{{ route('dashboard') }}" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-800 font-semibold px-6 py-3 rounded-xl transition duration-150 ease-in-out text-center">
@@ -105,20 +107,20 @@
             <aside class="lg:col-span-4 bg-white rounded-2xl border border-gray-200/80 p-8 shadow-sm flex flex-col items-center" data-purpose="public-preview-card">
                <!-- Preview Label -->
                <span class="text-xs font-semibold text-gray-500 tracking-wide mb-6">
-                   Tampilan publik
+                    Tampilan publik
                </span>
                
-               <!-- Avatar Preview -->
+               <!-- Avatar Preview (Menggunakan mb_substr sesuai revisi minor) -->
                <div aria-hidden="true" class="w-24 h-24 rounded-full bg-brand-100 flex-shrink-0 mb-4 flex items-center justify-center text-brand-700 font-bold text-2xl">
-                    {{ substr($user->name ?? 'D', 0, 1) }}
+                    {{ mb_substr($user->name ?? 'D', 0, 1) }}
                </div>
                
                <!-- Live User Info Preview -->
                <h2 class="text-xl font-bold text-gray-900 text-center tracking-tight" id="preview_name">
-                   {{ $user->name }}
+                    {{ $user->name }}
                </h2>
                <p class="text-sm font-normal text-gray-500 text-center mt-1" id="preview_city">
-                   {{ $user->region->name ?? 'Belum memilih wilayah' }}
+                    {{ $user->region->name ?? 'Belum memilih wilayah' }}
                </p>
             </aside>
         </div>

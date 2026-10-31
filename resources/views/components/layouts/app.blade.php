@@ -8,6 +8,7 @@
     $links = [
         ['label' => 'Beranda', 'route' => 'dashboard'],
         ['label' => 'Keranjang', 'route' => 'cart.index'],
+        ['label' => 'Profil', 'route' => 'profil.edit', 'active' => 'profil.*', 'dusk' => 'nav-profil'],
     ];
 
     if ($user->isAdmin()) {
