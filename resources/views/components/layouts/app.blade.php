@@ -4,13 +4,18 @@
 @php
     $user = auth()->user();
 
+    // Tautan navbar sesuai role. Tambahkan tautan modul baru di sini.
+    // Key opsional: 'active' (pola routeIs untuk status aktif, bawaan 'route') dan 'dusk'.
     $links = [];
 
     if ($user) {
         $links[] = ['label' => 'Beranda', 'route' => 'dashboard'];
+        $links[] = ['label' => 'Keranjang', 'route' => 'cart.index'];
 
         if ($user->isAdmin()) {
             $links[] = ['label' => 'Admin', 'route' => 'admin.dashboard'];
+            $links[] = ['label' => __('master-data.categories.nav'), 'route' => 'admin.categories.index', 'active' => 'admin.categories.*', 'dusk' => 'nav-categories'];
+            $links[] = ['label' => __('master-data.materials.nav'), 'route' => 'admin.materials.index', 'active' => 'admin.materials.*', 'dusk' => 'nav-materials'];
         }
     }
 @endphp
@@ -35,17 +40,19 @@
                 </a>
 
                 <ul class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium">
-                    @if ($user)
+                    @auth
                         @foreach ($links as $link)
+                            @php($isCurrent = request()->routeIs($link['active'] ?? $link['route']))
                             <li>
                                 <a
                                     href="{{ route($link['route']) }}"
                                     @class([
                                         'rounded-md px-1 py-0.5',
-                                        'text-brand-700 underline underline-offset-4' => request()->routeIs($link['route']),
-                                        'text-gray-700 hover:text-brand-700' => ! request()->routeIs($link['route']),
+                                        'text-brand-700 underline underline-offset-4' => $isCurrent,
+                                        'text-gray-700 hover:text-brand-700' => ! $isCurrent,
                                     ])
-                                    @if (request()->routeIs($link['route'])) aria-current="page" @endif
+                                    @if ($isCurrent) aria-current="page" @endif
+                                    @isset($link['dusk']) dusk="{{ $link['dusk'] }}" @endisset
                                 >
                                     {{ $link['label'] }}
                                 </a>
@@ -60,14 +67,15 @@
                                     'text-brand-700 underline underline-offset-4' => request()->routeIs('catalog.*'),
                                     'text-gray-700 hover:text-brand-700' => ! request()->routeIs('catalog.*'),
                                 ])
+                                @if (request()->routeIs('catalog.*')) aria-current="page" @endif
                             >
                                 Katalog
                             </a>
                         </li>
-                    @endif
+                    @endauth
                 </ul>
 
-                @if ($user)
+                @auth
                     <div class="ms-auto flex items-center gap-3 text-sm">
                         <span class="max-w-40 truncate text-gray-700" dusk="nav-user-name">{{ $user->name }}</span>
 
@@ -91,7 +99,7 @@
                             Daftar
                         </a>
                     </div>
-                @endif
+                @endauth
             </nav>
         </header>
 

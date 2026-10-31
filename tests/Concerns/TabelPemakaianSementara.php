@@ -11,7 +11,9 @@ use Illuminate\Support\Facades\Schema;
  * membuat versi minimal yang hanya berisi kolom yang dibaca data master.
  *
  * Tabel yang dibuat di sini di-drop lagi setelah test. Di SQLite tabel sudah ikut rollback
- * transaksi RefreshDatabase, tetapi di MySQL CREATE TABLE melakukan commit implisit.
+ * transaksi RefreshDatabase. Di MySQL CREATE TABLE melakukan commit implisit, sehingga transaksi
+ * test dan savepoint DB::transaction di dalamnya rusak; test yang butuh tabel sementara di-skip
+ * di MySQL dan dijalankan di SQLite (seperti CI).
  *
  * Setelah tabel asli masuk develop, ganti pemakaian trait ini dengan factory listing/harga acuan,
  * karena kolom wajib di tabel asli tidak diisi oleh insert di sini.
@@ -24,6 +26,7 @@ trait TabelPemakaianSementara
             return;
         }
 
+        $this->lewatiBilaDdlTidakTransaksional();
         $this->hapusSetelahTest('listings');
 
         Schema::create('listings', function (Blueprint $table) use ($denganListingType) {
@@ -43,12 +46,33 @@ trait TabelPemakaianSementara
             return;
         }
 
+        $this->lewatiBilaDdlTidakTransaksional();
         $this->hapusSetelahTest('reference_prices');
 
         Schema::create('reference_prices', function (Blueprint $table) {
             $table->id();
             $table->foreignId('material_id');
         });
+    }
+
+    /**
+     * Tabel bebas untuk skenario lain, misalnya tabel ber-FK restrictOnDelete ke categories.
+     *
+     * @param  callable(Blueprint): void  $kolom
+     */
+    protected function buatTabelSementara(string $tabel, callable $kolom): void
+    {
+        $this->lewatiBilaDdlTidakTransaksional();
+        $this->hapusSetelahTest($tabel);
+
+        Schema::create($tabel, $kolom);
+    }
+
+    private function lewatiBilaDdlTidakTransaksional(): void
+    {
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            $this->markTestSkipped('Tabel sementara butuh DDL transaksional (SQLite, seperti CI).');
+        }
     }
 
     /**
