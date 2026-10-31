@@ -3,9 +3,9 @@
         
         <!-- Back Navigation Link -->
         <div class="mb-4">
-            <a class="inline-flex items-center text-sm font-semibold text-[#14805e] hover:text-[#0e6349] transition-colors group" href="{{ route('dashboard') }}">
+            <a class="inline-flex items-center text-sm font-semibold text-brand-600 hover:text-brand-700 transition-colors group" href="{{ route('dashboard') }}">
                <span class="mr-1.5 transition-transform group-hover:-translate-x-1">←</span>
-               Kembali ke Profil Publik
+               Kembali ke Beranda
             </a>
         </div>
 
@@ -26,67 +26,79 @@
             
             <!-- Left Column: Edit Form Card -->
             <section class="lg:col-span-8 bg-white rounded-2xl border border-gray-200/80 p-8 shadow-sm" data-purpose="edit-profile-form">
-               <form action="{{ route('profil.update') }}" method="POST">
-                   @csrf
-                   @method('PATCH')
+                <form action="{{ route('profil.update') }}" method="POST">
+                    @csrf
+                    @method('PATCH')
 
-                   <!-- Field 1: Nama Tampilan -->
-                   <div class="mb-6">
-                       <label class="block text-sm font-bold text-gray-900 mb-2" for="nama_tampilan">
-                           Nama tampilan
-                       </label>
-                       <input class="w-full rounded-xl border border-gray-300 px-4 py-3 text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#14805e] focus:border-transparent transition" 
-                              id="nama_tampilan" name="name" type="text" value="{{ old('name', $user->name) }}" required />
-                       @error('name') <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> @enderror
-                   </div>
+                    <!-- Field 1: Nama Tampilan -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-bold text-gray-900 mb-2" for="nama_tampilan">
+                            Nama tampilan
+                        </label>
+                        <input class="w-full rounded-xl border {{ $errors->has('name') ? 'border-red-500' : 'border-gray-300' }} px-4 py-3 text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-transparent transition" 
+                               id="nama_tampilan" 
+                               name="name" 
+                               type="text" 
+                               value="{{ old('name', $user->name) }}" 
+                               required 
+                               aria-invalid="{{ $errors->has('name') ? 'true' : 'false' }}"
+                               @error('name') aria-describedby="name-error" @enderror />
+                        @error('name') 
+                            <span id="name-error" class="text-red-500 text-sm mt-1 block">{{ $message }}</span> 
+                        @enderror
+                    </div>
 
-                   <!-- Field 2: Wilayah Dropdown -->
-                   <div class="mb-2">
-                       <label class="block text-sm font-bold text-gray-900 mb-2" for="wilayah">
-                           Wilayah
-                       </label>
-                       <div class="relative">
-                           <select class="w-full appearance-none rounded-xl border border-gray-300 px-4 py-3 text-base text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#14805e] focus:border-transparent transition pr-10 cursor-pointer" 
-                                   id="wilayah" name="region_id" required>
+                    <!-- Field 2: Wilayah Dropdown -->
+                    <div class="mb-2">
+                        <label class="block text-sm font-bold text-gray-900 mb-2" for="wilayah">
+                            Wilayah
+                        </label>
+                        <div class="relative">
+                            <select class="w-full appearance-none rounded-xl border {{ $errors->has('region_id') ? 'border-red-500' : 'border-gray-300' }} px-4 py-3 text-base text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-transparent transition pr-10 cursor-pointer" 
+                                    id="wilayah" 
+                                    name="region_id" 
+                                    required
+                                    aria-invalid="{{ $errors->has('region_id') ? 'true' : 'false' }}"
+                                    @error('region_id') aria-describedby="region-error" @enderror>
                                 <option value="">Pilih Wilayah</option>
                                 
-                                {{-- Looping data master wilayah dinamis dari database (menggunakan 'name') --}}
                                 @foreach($regions as $region)
                                     <option value="{{ $region->id }}" {{ (old('region_id', $user->region_id ?? '') == $region->id) ? 'selected' : '' }}>
                                         {{ $region->name }}
                                     </option>
                                 @endforeach
-                           </select>
+                            </select>
 
-                           <!-- Dropdown Arrow Indicator -->
-                           <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500 text-xs">
+                            <!-- Dropdown Arrow Indicator -->
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500 text-xs">
                                 ▾
-                           </div>
-                       </div>
-                       <!-- Subtitle Helper for Wilayah -->
-                       <p class="text-xs text-gray-500 mt-1.5 font-normal">
-                           Dipilih dari data master wilayah
-                       </p>
-                       @error('region_id') <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> @enderror
-                   </div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1.5 font-normal">
+                            Dipilih dari data master wilayah
+                        </p>
+                        @error('region_id') 
+                            <span id="region-error" class="text-red-500 text-sm mt-1 block">{{ $message }}</span> 
+                        @enderror
+                    </div>
 
-                   <!-- Privacy Footnote -->
-                   <div class="mt-5 mb-8">
-                       <p class="text-xs text-gray-500 font-normal">
-                           Email, nomor telepon, dan alamat rinci tidak ditampilkan di profil publik.
-                       </p>
-                   </div>
+                    <!-- Privacy Footnote -->
+                    <div class="mt-5 mb-8">
+                        <p class="text-xs text-gray-500 font-normal">
+                            Email, nomor telepon, dan alamat rinci tidak ditampilkan di profil publik.
+                        </p>
+                    </div>
 
-                   <!-- Action Buttons Group -->
-                   <div class="flex items-center space-x-3.5 pt-1">
-                       <button class="bg-[#14805e] hover:bg-[#0e6349] text-white font-semibold px-6 py-3 rounded-xl transition duration-150 ease-in-out shadow-sm" type="submit">
-                           Simpan perubahan
-                       </button>
-                       <a href="{{ route('dashboard') }}" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-800 font-semibold px-6 py-3 rounded-xl transition duration-150 ease-in-out text-center">
-                           Batal
-                       </a>
-                   </div>
-               </form>
+                    <!-- Action Buttons Group -->
+                    <div class="flex items-center space-x-3.5 pt-1">
+                        <button class="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-xl transition duration-150 ease-in-out shadow-sm" type="submit">
+                            Simpan perubahan
+                        </button>
+                        <a href="{{ route('dashboard') }}" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-800 font-semibold px-6 py-3 rounded-xl transition duration-150 ease-in-out text-center">
+                            Batal
+                        </a>
+                    </div>
+                </form>
             </section>
 
             <!-- Right Column: Public Preview Card -->
@@ -97,7 +109,7 @@
                </span>
                
                <!-- Avatar Preview -->
-               <div aria-hidden="true" class="w-24 h-24 rounded-full bg-[#dcf2e8] flex-shrink-0 mb-4 flex items-center justify-center text-[#14805e] font-bold text-2xl">
+               <div aria-hidden="true" class="w-24 h-24 rounded-full bg-brand-100 flex-shrink-0 mb-4 flex items-center justify-center text-brand-700 font-bold text-2xl">
                     {{ substr($user->name ?? 'D', 0, 1) }}
                </div>
                
@@ -132,4 +144,4 @@
            });
         }
     </script>
-</x-layouts.app> 
+</x-layouts.app>
