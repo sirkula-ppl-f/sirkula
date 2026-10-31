@@ -14,6 +14,7 @@
         $links[] = ['label' => 'Admin', 'route' => 'admin.dashboard'];
         $links[] = ['label' => __('master-data.categories.nav'), 'route' => 'admin.categories.index', 'active' => 'admin.categories.*', 'dusk' => 'nav-categories'];
         $links[] = ['label' => __('master-data.materials.nav'), 'route' => 'admin.materials.index', 'active' => 'admin.materials.*', 'dusk' => 'nav-materials'];
+        $links[] = ['label' => 'Kelola Akun', 'route' => 'admin.users.index', 'active' => 'admin.users.*', 'dusk' => 'nav-users'];
     }
 @endphp
 

@@ -98,4 +98,12 @@ class User extends Authenticatable
 
         $this->forceFill(['remember_token' => Str::random(60)])->save();
     }
+
+    /**
+     * Relasi ke audit logs (aksi audit yang dilakukan oleh user/admin ini).
+     */
+    public function auditLogs(): HasMany
+    {
+        return $this->hasMany(AuditLog::class);
+    }
 }
