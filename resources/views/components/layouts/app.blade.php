@@ -4,13 +4,17 @@
     $user = auth()->user();
 
     // Tautan navbar sesuai role. Tambahkan tautan modul baru di sini.
+    // Key opsional: 'active' (pola routeIs untuk status aktif, bawaan 'route') dan 'dusk'.
     $links = [
         ['label' => 'Beranda', 'route' => 'dashboard'],
+        ['label' => 'Keranjang', 'route' => 'cart.index'],
     ];
 
     if ($user->isAdmin()) {
         $links[] = ['label' => 'Admin', 'route' => 'admin.dashboard'];
-        $links[] = ['label' => 'Kelola Akun', 'route' => 'admin.users.index'];
+        $links[] = ['label' => __('master-data.categories.nav'), 'route' => 'admin.categories.index', 'active' => 'admin.categories.*', 'dusk' => 'nav-categories'];
+        $links[] = ['label' => __('master-data.materials.nav'), 'route' => 'admin.materials.index', 'active' => 'admin.materials.*', 'dusk' => 'nav-materials'];
+        $links[] = ['label' => 'Kelola Akun', 'route' => 'admin.users.index', 'active' => 'admin.users.*', 'dusk' => 'nav-users'];
     }
 @endphp
 
@@ -32,15 +36,17 @@
 
                 <ul class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium">
                     @foreach ($links as $link)
+                        @php($isCurrent = request()->routeIs($link['active'] ?? $link['route']))
                         <li>
                             <a
                                 href="{{ route($link['route']) }}"
                                 @class([
                                     'rounded-md px-1 py-0.5',
-                                    'text-brand-700 underline underline-offset-4' => request()->routeIs($link['route']),
-                                    'text-gray-700 hover:text-brand-700' => ! request()->routeIs($link['route']),
+                                    'text-brand-700 underline underline-offset-4' => $isCurrent,
+                                    'text-gray-700 hover:text-brand-700' => ! $isCurrent,
                                 ])
-                                @if (request()->routeIs($link['route'])) aria-current="page" @endif
+                                @if ($isCurrent) aria-current="page" @endif
+                                @isset($link['dusk']) dusk="{{ $link['dusk'] }}" @endisset
                             >
                                 {{ $link['label'] }}
                             </a>

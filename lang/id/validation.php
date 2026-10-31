@@ -190,6 +190,11 @@ return [
         'email' => [
             'unique' => 'Email sudah terdaftar.',
         ],
+        'listing_types' => [
+            'required' => 'Pilih minimal satu tipe listing.',
+            'array' => 'Pilih minimal satu tipe listing.',
+            'min' => 'Pilih minimal satu tipe listing.',
+        ],
     ],
 
     /*
@@ -207,6 +212,9 @@ return [
         'token' => 'token',
         'category_id' => 'kategori',
         'material_id' => 'material',
+        'description' => 'deskripsi',
+        'listing_types' => 'tipe listing',
+        'listing_types.*' => 'tipe listing',
     ],
 
 ];

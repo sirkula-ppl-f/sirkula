@@ -74,6 +74,14 @@ class User extends Authenticatable
     }
 
     /**
+     * @return HasMany<CartItem, $this>
+     */
+    public function cartItems()
+    {
+        return $this->hasMany(CartItem::class);
+    }
+
+    /**
      * Cabut semua sesi login user ini di semua perangkat.
      *
      * Menghapus baris tabel sesi milik user dan mengganti remember_token agar
