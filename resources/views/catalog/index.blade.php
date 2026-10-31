@@ -65,8 +65,12 @@
         <a href="#">Panduan</a>
     </nav>
 
-    <a class="btn" href="{{ route('login') }}">Masuk</a>
-    <a class="btn btn-green" href="{{ route('register') }}">Daftar</a>
+    @guest
+        <a class="btn" href="{{ route('login') }}">Masuk</a>
+        <a class="btn btn-green" href="{{ route('register') }}">Daftar</a>
+    @else
+        <span>{{ auth()->user()->name }}</span>
+    @endguest
 </header>
 
 <main>
@@ -74,104 +78,53 @@
     <p class="subtitle">Jelajahi barang bekas layak pakai, material daur ulang terpilah, dan produk upcycle dari berbagai wilayah di Indonesia.</p>
 
     <form class="search" method="GET" action="{{ route('catalog.index') }}">
-        <input type="search" name="search" value="{{ $search }}" placeholder="Cari berdasarkan judul atau deskripsi...">
+        <input type="search" name="search" value="{{ $search }}" placeholder="Cari berdasarkan judul...">
         <button class="btn btn-green" type="submit">Cari</button>
     </form>
 
-    @php
-        $types = [
-            '' => 'Semua',
-            'Barang Bekas' => 'Barang Bekas',
-            'Material Daur Ulang' => 'Material Daur Ulang',
-            'Produk Upcycle' => 'Produk Upcycle',
-        ];
-    @endphp
-
     <div class="types">
-        @foreach($types as $value => $label)
-            <a class="chip {{ request('type', '') === $value ? 'active' : '' }}"
-               href="{{ route('catalog.index', array_merge(request()->except('page', 'type'), ['type' => $value])) }}">
-                {{ $label }}
+        <a class="chip {{ $type === '' ? 'active' : '' }}"
+           href="{{ route('catalog.index', request()->except('page', 'type')) }}">
+            Semua
+        </a>
+
+        @foreach($listingTypes as $listingType)
+            <a class="chip {{ $type === $listingType->value ? 'active' : '' }}"
+               href="{{ route('catalog.index', array_merge(request()->except('page', 'type'), ['type' => $listingType->value])) }}">
+                {{ $listingType->label() }}
             </a>
         @endforeach
     </div>
 
     <form class="filters" method="GET" action="{{ route('catalog.index') }}">
         <input type="hidden" name="search" value="{{ $search }}">
+        <input type="hidden" name="type" value="{{ $type }}">
 
-
-<select name="category">
-    <option value="">Semua Kategori</option>
-    @foreach($categories as $categoryOption)
-        <option
-            value="{{ $categoryOption->name }}"
-            @selected(request('category') === $categoryOption->name)
-        >
-            {{ $categoryOption->name }}
-        </option>
-    @endforeach
-</select>
-
-
-
-<select name="region">
-    <option value="">Semua Wilayah</option>
-    @foreach([
-        'Aceh',
-        'Sumatera Utara',
-        'Sumatera Barat',
-        'Riau',
-        'Kepulauan Riau',
-        'Jambi',
-        'Sumatera Selatan',
-        'Bangka Belitung',
-        'Bengkulu',
-        'Lampung',
-        'DKI Jakarta',
-        'Banten',
-        'Jawa Barat',
-        'Jawa Tengah',
-        'DI Yogyakarta',
-        'Jawa Timur',
-        'Bali',
-        'Nusa Tenggara Barat',
-        'Nusa Tenggara Timur',
-        'Kalimantan Barat',
-        'Kalimantan Tengah',
-        'Kalimantan Selatan',
-        'Kalimantan Timur',
-        'Kalimantan Utara',
-        'Sulawesi Utara',
-        'Gorontalo',
-        'Sulawesi Tengah',
-        'Sulawesi Barat',
-        'Sulawesi Selatan',
-        'Sulawesi Tenggara',
-        'Maluku',
-        'Maluku Utara',
-        'Papua',
-        'Papua Barat',
-        'Papua Selatan',
-        'Papua Tengah',
-        'Papua Pegunungan',
-        'Papua Barat Daya'
-    ] as $option)
-        <option value="{{ $option }}" @selected(request('region') === $option)>
-            {{ $option }}
-        </option>
-    @endforeach
-</select>
-
-
-        <select name="hub">
-            <option value="">Hub</option>
-            @foreach(['Bank Sampah Cicendo','RW 05 Dago','Komunitas Buah Batu','Etalase Kriya Lembang'] as $option)
-                <option value="{{ $option }}" @selected(request('hub') === $option)>{{ $option }}</option>
+        <select name="category_id">
+            <option value="">Semua Kategori</option>
+            @foreach($categories as $categoryOption)
+                <option value="{{ $categoryOption->id }}"
+                    @selected((string) $categoryId === (string) $categoryOption->id)>
+                    {{ $categoryOption->name }}
+                </option>
             @endforeach
         </select>
 
-        <input type="number" min="0" name="min_price" value="{{ request('min_price') }}" placeholder="Harga min">
-        <input type="number" min="0" name="max_price" value="{{ request('max_price') }}" placeholder="Harga maks">
+        <select name="region_id">
+            <option value="">Semua Wilayah</option>
+            @foreach($regions as $regionOption)
+                <option value="{{ $regionOption->id }}"
+                    @selected((string) $regionId === (string) $regionOption->id)>
+                    {{ $regionOption->name }}
+                </option>
+            @endforeach
+        </select>
+
+        <input type="number" min="0" name="min_price"
+               value="{{ request('min_price') }}" placeholder="Harga min">
+
+        <input type="number" min="0" name="max_price"
+               value="{{ request('max_price') }}" placeholder="Harga maks">
 
         <select name="sort">
             <option value="newest" @selected($sort === 'newest')>Urutkan: Terbaru</option>
@@ -191,33 +144,35 @@
     <section class="grid">
         @forelse($listings as $listing)
             @php
-                $type = $listing['type'] ?? '';
-                $typeClass = $type === 'Material Daur Ulang'
-                    ? 'material'
-                    : ($type === 'Produk Upcycle' ? 'upcycle' : '');
+                $listingType = \App\Enums\ListingType::tryFrom($listing->listing_type ?? '');
+                $typeClass = match ($listingType) {
+                    \App\Enums\ListingType::Recyclable => 'material',
+                    \App\Enums\ListingType::Upcycle => 'upcycle',
+                    default => '',
+                };
             @endphp
 
-            <a class="card" href="{{ route('catalog.show', $listing['id']) }}">
+            <a class="card" href="{{ route('catalog.show', $listing->id) }}">
                 <div class="photo {{ $typeClass }}">Foto produk</div>
 
                 <div class="card-body">
-                    <span class="badge {{ $typeClass }}">{{ $type ?: $listing['category'] }}</span>
-                    <h2>{{ $listing['title'] }}</h2>
+                    <span class="badge {{ $typeClass }}">
+                        {{ $listingType?->label() ?? 'Listing' }}
+                    </span>
+
+                    <h2>{{ $listing->title }}</h2>
 
                     <p class="price">
-                        Rp{{ number_format($listing['price'], 0, ',', '.') }}
-                        @if(!empty($listing['unit']))
-                            / {{ $listing['unit'] }}
-                        @endif
+                        Rp{{ number_format($listing->price, 0, ',', '.') }}
+                        / {{ strtolower($listing->sale_unit ?? 'item') }}
                     </p>
 
                     <p class="meta">
-                        {{ $listing['condition'] }}
-                        ·
-                        @if(!empty($listing['reference_price']))
-                            Acuan Rp{{ number_format($listing['reference_price'], 0, ',', '.') }}/kg ·
-                        @endif
-                        Hub {{ $listing['hub'] }}
+                        Kategori: {{ $listing->category?->name ?? 'Belum dikategorikan' }}
+                        <br>
+                        Wilayah: {{ $listing->seller?->region?->name ?? 'Belum tersedia' }}
+                        <br>
+                        Stok tersedia: {{ $listing->stock }}
                     </p>
                 </div>
             </a>

@@ -1,5 +1,9 @@
 
-<x-layouts.app :title="$listing['title']">
+<x-layouts.app :title="$listing->title">
+    @php
+        $listingType = \App\Enums\ListingType::tryFrom($listing->listing_type ?? '');
+    @endphp
+
     <div class="mx-auto max-w-4xl">
         <a
             href="{{ route('catalog.index') }}"
@@ -10,53 +14,54 @@
 
         <article class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
             <span class="inline-flex rounded-md bg-green-100 px-3 py-1.5 text-xs font-bold text-green-800">
-                {{ $listing['type'] }}
+                {{ $listingType?->label() ?? 'Listing' }}
             </span>
 
             <h2 class="mt-5 text-2xl font-bold text-gray-900">
-                {{ $listing['title'] }}
+                {{ $listing->title }}
             </h2>
 
             <p class="mt-4 text-2xl font-bold text-brand-700">
-                Rp{{ number_format($listing['price'], 0, ',', '.') }}
-                @if (! empty($listing['unit']))
-                    <span class="text-base font-medium text-gray-600">
-                        / {{ $listing['unit'] }}
-                    </span>
-                @endif
+                Rp{{ number_format($listing->price, 0, ',', '.') }}
+                <span class="text-base font-medium text-gray-600">
+                    / {{ strtolower($listing->sale_unit ?? 'item') }}
+                </span>
             </p>
 
             <div class="mt-6 grid gap-4 border-t border-gray-100 pt-6 sm:grid-cols-2">
                 <div>
                     <p class="text-sm text-gray-500">Kategori</p>
-                    <p class="mt-1 font-medium text-gray-900">{{ $listing['category'] }}</p>
-                </div>
-
-                <div>
-                    <p class="text-sm text-gray-500">Kondisi</p>
-                    <p class="mt-1 font-medium text-gray-900">{{ $listing['condition'] }}</p>
+                    <p class="mt-1 font-medium text-gray-900">
+                        {{ $listing->category?->name ?? 'Belum dikategorikan' }}
+                    </p>
                 </div>
 
                 <div>
                     <p class="text-sm text-gray-500">Wilayah</p>
-                    <p class="mt-1 font-medium text-gray-900">{{ $listing['region'] }}</p>
+                    <p class="mt-1 font-medium text-gray-900">
+                        {{ $listing->seller?->region?->name ?? 'Belum tersedia' }}
+                    </p>
                 </div>
 
                 <div>
-                    <p class="text-sm text-gray-500">Hub</p>
-                    <p class="mt-1 font-medium text-gray-900">{{ $listing['hub'] }}</p>
+                    <p class="text-sm text-gray-500">Stok tersedia</p>
+                    <p class="mt-1 font-medium text-gray-900">
+                        {{ $listing->stock }}
+                    </p>
                 </div>
 
                 <div>
-                    <p class="text-sm text-gray-500">Stok</p>
-                    <p class="mt-1 font-medium text-gray-900">{{ $listing['stock'] }}</p>
+                    <p class="text-sm text-gray-500">Penjual</p>
+                    <p class="mt-1 font-medium text-gray-900">
+                        {{ $listing->seller?->name ?? 'Belum tersedia' }}
+                    </p>
                 </div>
             </div>
 
             <section class="mt-8 border-t border-gray-100 pt-6">
-                <h3 class="text-lg font-semibold text-gray-900">Deskripsi produk</h3>
+                <h3 class="text-lg font-semibold text-gray-900">Informasi produk</h3>
                 <p class="mt-3 leading-relaxed text-gray-600">
-                    {{ $listing['description'] }}
+                    Informasi produk ditampilkan berdasarkan data listing yang tersedia.
                 </p>
             </section>
 
