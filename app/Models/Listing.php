@@ -10,6 +10,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Model listing untuk katalog dan keranjang.
+ *
+ * STUB sementara untuk mendukung PBI-11 (keranjang) dan PBI-10 (katalog).
+ * Model serta migrasi Listing asli dari PBI-07/08 dapat menggantikan stub ini.
+ * Koordinasikan perubahan dengan Bobby (keranjang) dan Adelia (listing)
+ * agar relasi dan kebutuhan modul yang sudah berjalan tidak hilang.
  */
 class Listing extends Model
 {

@@ -24,9 +24,10 @@ class CatalogController extends Controller
         $query = Listing::purchasable()
             ->with(['category', 'seller.region']);
 
-        // Pencarian sementara berdasarkan judul.
+        // Pencarian berdasarkan judul dengan escape karakter LIKE.
         if ($search !== '') {
-            $query->where('title', 'like', '%'.$search.'%');
+            $escaped = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $search);
+            $query->whereRaw("title LIKE ? ESCAPE '!'", ["%{$escaped}%"]);
         }
 
         // Filter tipe listing.
