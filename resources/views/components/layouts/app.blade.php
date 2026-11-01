@@ -1,4 +1,3 @@
-
 @props(['title' => null])
 
 @php
@@ -16,6 +15,7 @@
             $links[] = ['label' => 'Admin', 'route' => 'admin.dashboard'];
             $links[] = ['label' => __('master-data.categories.nav'), 'route' => 'admin.categories.index', 'active' => 'admin.categories.*', 'dusk' => 'nav-categories'];
             $links[] = ['label' => __('master-data.materials.nav'), 'route' => 'admin.materials.index', 'active' => 'admin.materials.*', 'dusk' => 'nav-materials'];
+            $links[] = ['label' => 'Kelola Akun', 'route' => 'admin.users.index', 'active' => 'admin.users.*', 'dusk' => 'nav-users'];
         }
     }
 @endphp
@@ -79,6 +79,7 @@
                     <div class="ms-auto flex items-center gap-3 text-sm">
                         <span class="max-w-40 truncate text-gray-700" dusk="nav-user-name">{{ $user->name }}</span>
 
+                        {{-- Logout hanya lewat POST + CSRF --}}
                         <form method="POST" action="{{ route('logout') }}" data-submit-once>
                             @csrf
                             <button
