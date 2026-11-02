@@ -10,6 +10,7 @@
     if ($user) {
         $links[] = ['label' => 'Beranda', 'route' => 'dashboard'];
         $links[] = ['label' => 'Keranjang', 'route' => 'cart.index'];
+        $links[] = ['label' => 'Profil', 'route' => 'profil.edit', 'active' => 'profil.*', 'dusk' => 'nav-profil'];
 
         if ($user->isAdmin()) {
             $links[] = ['label' => 'Admin', 'route' => 'admin.dashboard'];
