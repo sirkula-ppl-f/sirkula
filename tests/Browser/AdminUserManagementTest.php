@@ -32,12 +32,18 @@ class AdminUserManagementTest extends DuskTestCase
                 ->assertSee('Kelola Status Akun')
                 ->assertSee('Dewi Anggraini')
                 ->click("@select-user-{$warga->id}")
+                ->assertAttribute("@select-user-{$warga->id}", 'aria-current', 'true')
                 ->assertSeeIn('@panel-user-name', 'Dewi Anggraini')
                 ->assertSeeIn('@panel-user-status', 'Aktif')
                 ->type('@reason-input', 'Pelanggaran ketentuan komunitas berulang.')
                 ->click('@panel-action-button')
                 ->waitFor('@confirm-status-dialog')
                 ->assertSeeIn('@confirm-status-dialog', 'Tangguhkan akun “Dewi Anggraini”?')
+                ->click('@dialog-cancel-button')
+                ->waitUntilMissing('@confirm-status-dialog')
+                ->assertSeeIn('@panel-user-status', 'Aktif')
+                ->click('@panel-action-button')
+                ->waitFor('@confirm-status-dialog')
                 ->click('@dialog-confirm-button')
                 ->waitFor('@alert')
                 ->assertSeeIn('@alert', 'Akun pengguna Dewi Anggraini berhasil ditangguhkan.')
@@ -91,13 +97,42 @@ class AdminUserManagementTest extends DuskTestCase
             ]);
 
             try {
-                $browser->visit(route('admin.users.index'));
+                $browser->visit(route('admin.users.index'))
+                    ->assertVisible('@nav-toggle')
+                    ->assertAttribute('@nav-toggle', 'aria-expanded', 'false')
+                    ->click('@nav-toggle')
+                    ->assertAttribute('@nav-toggle', 'aria-expanded', 'true')
+                    ->assertVisible('@nav-users');
 
                 [$scrollWidth, $innerWidth] = $browser->script(
                     'return [document.documentElement.scrollWidth, window.innerWidth];'
                 )[0];
 
                 $this->assertLessThanOrEqual($innerWidth, $scrollWidth);
+
+                // Tutup kembali menu seluler
+                $browser->click('@nav-toggle')
+                    ->assertAttribute('@nav-toggle', 'aria-expanded', 'false');
+
+                // Pilih pengguna dan buka dialog konfirmasi di layar 360px
+                $target = User::where('email', 'rina@sirkula.test')->sole();
+                $browser->click("@select-user-{$target->id}")
+                    ->type('@reason-input', 'Pengujian responsivitas dialog pada layar seluler.')
+                    ->click('@panel-action-button')
+                    ->waitFor('@confirm-status-dialog');
+
+                [$kiri, $atas, $kanan, $bawah, $lebar, $tinggi] = $browser->script(
+                    'const r = document.getElementById("confirm-status-dialog").getBoundingClientRect();'
+                    .'return [r.left, r.top, r.right, r.bottom, document.documentElement.clientWidth, window.innerHeight];'
+                )[0];
+
+                $this->assertGreaterThanOrEqual(0, $kiri);
+                $this->assertGreaterThanOrEqual(0, $atas);
+                $this->assertLessThanOrEqual($lebar, $kanan);
+                $this->assertLessThanOrEqual($tinggi, $bawah);
+
+                $browser->click('@dialog-cancel-button')
+                    ->waitUntilMissing('@confirm-status-dialog');
             } finally {
                 $devTools->execute('Emulation.clearDeviceMetricsOverride');
             }
