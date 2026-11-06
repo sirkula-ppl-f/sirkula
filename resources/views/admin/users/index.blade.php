@@ -35,7 +35,7 @@
         </p>
     </div>
 
-    <div class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200">
+    <div class="mb-6 flex flex-col gap-4 rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Filter status akun">
             @foreach ($chips as $chip)
                 @php
@@ -83,19 +83,19 @@
                 maxlength="100"
                 placeholder="Cari nama atau email"
                 dusk="search-input"
-                class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-gray-400 focus:border-brand-600 sm:w-64"
+                class="min-w-0 flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-gray-400 focus:border-brand-600 sm:w-64 sm:flex-none"
             >
 
             <button
                 type="submit"
-                class="inline-flex items-center rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+                class="inline-flex items-center justify-center rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
                 dusk="search-submit"
             >Cari</button>
 
             @if ($hasFilters)
                 <a
                     href="{{ route('admin.users.index') }}"
-                    class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50"
+                    class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50"
                     dusk="reset-filter"
                 >Reset</a>
             @endif
@@ -158,7 +158,7 @@
                                     'bg-brand-50/40' => $isSelected,
                                 ])
                             >
-                                <th scope="row" class="px-4 py-3 text-left font-medium text-gray-900">
+                                <th scope="row" class="max-w-48 px-4 py-3 text-left font-medium wrap-break-word text-gray-900 sm:max-w-xs">
                                     {{ $item->name }}
                                     <span class="block break-all text-xs font-normal text-gray-500">{{ $item->email }}</span>
                                 </th>
@@ -191,7 +191,12 @@
                                         data-activate-url="{{ route('admin.users.activate', $item) }}"
                                         data-can-modify="{{ $canModify ? 'true' : 'false' }}"
                                         data-guard-message="{{ $guardMessage }}"
-                                        class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 hover:bg-gray-50"
+                                        @if ($isSelected) aria-current="true" @endif
+                                        @class([
+                                            'inline-flex items-center rounded-md border px-3 py-1.5 text-sm font-medium transition',
+                                            'border-brand-600 bg-brand-50 text-brand-800' => $isSelected,
+                                            'border-gray-300 bg-white text-gray-800 hover:bg-gray-50' => ! $isSelected,
+                                        ])
                                     >
                                         Pilih<span class="sr-only"> {{ $item->name }}</span>
                                     </a>
@@ -241,7 +246,7 @@
                             <h2
                                 id="panel-user-name"
                                 dusk="panel-user-name"
-                                class="text-base font-semibold text-gray-900"
+                                class="text-base font-semibold wrap-break-word text-gray-900"
                             >
                                 {{ $selectedUser->name }}
                             </h2>
@@ -355,7 +360,7 @@
         <div class="p-6">
             <h2
                 id="dialog-title"
-                class="text-lg font-semibold text-gray-900"
+                class="text-lg font-semibold wrap-break-word text-gray-900"
             >
                 Tangguhkan akun?
             </h2>
