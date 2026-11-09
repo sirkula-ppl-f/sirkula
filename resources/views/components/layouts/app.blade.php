@@ -34,7 +34,8 @@
         <header class="border-b border-gray-200 bg-white">
             <nav aria-label="Navigasi utama" class="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
                 <a
-                    href="{{ $user ? route('dashboard') : route('catalog.index') }}"
+                    href="{{ url('/') }}"
+                    dusk="nav-brand"
                     class="text-lg font-semibold text-brand-700"
                 >
                     {{ config('app.name') }}
