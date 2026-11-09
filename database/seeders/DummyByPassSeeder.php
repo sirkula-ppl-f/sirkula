@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Hub;
 use App\Models\Region;
 use App\Models\User;
+use Illuminate\Database\Seeder;
 
 class DummyBypassSeeder extends Seeder
 {

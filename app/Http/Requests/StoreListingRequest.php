@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreListingRequest extends FormRequest
@@ -17,7 +18,7 @@ class StoreListingRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -26,7 +27,7 @@ class StoreListingRequest extends FormRequest
             'tipe' => 'required|in:PRELOVED',
             'kondisi' => 'required|string',
             'stok' => 'required|integer|min:1',
-            
+
             // Aturan standar form listing
             'judul' => 'required|string|max:255',
             'kategori_id' => 'required|exists:categories,id',
