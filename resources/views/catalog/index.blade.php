@@ -56,7 +56,7 @@
 </head>
 <body>
 <header class="navbar">
-    <a class="brand" href="{{ route('catalog.index') }}"><span class="logo"></span>Sirkula</a>
+    <a class="brand" href="{{ url('/') }}"><span class="logo"></span>Sirkula</a>
 
     <nav class="navlinks">
         <a class="active" href="{{ route('catalog.index') }}">Katalog</a>
