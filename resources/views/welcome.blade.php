@@ -9,7 +9,7 @@
             'description' => 'Perpanjang usia pakai perabot, buku, elektronik, dan perlengkapan harian layak pakai dari warga sekitar.',
             'example_title' => 'Sepeda Lipat Bekas',
             'example_price' => 'Rp850.000',
-            'example_meta' => 'Kondisi baik · Hub Bank Sampah Cicendo',
+            'example_meta' => 'Kondisi baik · Hub Bank Sampah Melati',
             'dusk' => 'pillar-preloved',
         ],
         [
@@ -19,7 +19,7 @@
             'description' => 'Salurkan plastik PET, kardus, kaca, dan kaleng aluminium terpilah siap olah dalam satuan lot maupun kilogram.',
             'example_title' => 'Botol PET Terpilah (lot 25 kg)',
             'example_price' => 'Rp112.500 / lot',
-            'example_meta' => 'Acuan Rp4.500/kg · Hub RW 05 Dago',
+            'example_meta' => 'Acuan Rp4.500/kg · Hub Komunitas RW 05',
             'dusk' => 'pillar-recyclable',
         ],
         [
@@ -29,7 +29,7 @@
             'description' => 'Temukan produk kreatif bernilai tambah hasil daur ulang komunitas dan etalase UMKM pengrajin lokal.',
             'example_title' => 'Tas dari Banner Bekas',
             'example_price' => 'Rp135.000',
-            'example_meta' => 'Etalase Kriya Lembang',
+            'example_meta' => 'Etalase Kriya Nusantara',
             'dusk' => 'pillar-upcycle',
         ],
     ];
@@ -42,7 +42,7 @@
             'photo_bg' => 'bg-[#edf2fc]',
             'title' => 'Sepeda Lipat Bekas',
             'price' => 'Rp850.000',
-            'meta' => 'Kondisi baik · Hub Bank Sampah Cicendo',
+            'meta' => 'Kondisi baik · Hub Bank Sampah Melati',
         ],
         [
             'type' => ListingType::Recyclable,
@@ -51,7 +51,7 @@
             'photo_bg' => 'bg-[#ebf7f0]',
             'title' => 'Botol PET Terpilah (lot 25 kg)',
             'price' => 'Rp112.500 / lot',
-            'meta' => 'Acuan Rp4.500/kg · Hub RW 05 Dago',
+            'meta' => 'Acuan Rp4.500/kg · Hub Komunitas RW 05',
         ],
         [
             'type' => ListingType::Upcycle,
@@ -60,7 +60,7 @@
             'photo_bg' => 'bg-[#fcf2e6]',
             'title' => 'Tas dari Banner Bekas',
             'price' => 'Rp135.000',
-            'meta' => 'Etalase Kriya Lembang',
+            'meta' => 'Etalase Kriya Nusantara',
         ],
         [
             'type' => ListingType::Preloved,
@@ -69,7 +69,7 @@
             'photo_bg' => 'bg-[#edf2fc]',
             'title' => 'Rak Buku Kayu 4 Susun',
             'price' => 'Rp275.000',
-            'meta' => 'Kondisi baik · Hub Komunitas Buah Batu',
+            'meta' => 'Kondisi baik · Hub Komunitas Lestari',
         ],
     ];
 
@@ -201,9 +201,14 @@
         <section id="pratinjau-katalog" aria-labelledby="showcase-heading" class="scroll-mt-6" dusk="landing-showcase">
             <div class="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
                 <div>
-                    <h2 id="showcase-heading" class="text-xl font-bold text-[#171c1a] sm:text-2xl">
-                        Pratinjau Katalog Sirkula
-                    </h2>
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <h2 id="showcase-heading" class="text-xl font-bold text-[#171c1a] sm:text-2xl">
+                            Pratinjau Katalog Sirkula
+                        </h2>
+                        <span class="inline-flex items-center rounded-full border border-[#e3e8e5] bg-[#f7faf7] px-2.5 py-0.5 text-xs font-semibold text-[#6b7570]">
+                            Contoh
+                        </span>
+                    </div>
                     <p class="mt-1 text-sm text-[#6b7570]">
                         Contoh tampilan produk terverifikasi dari Hub Komunitas dan Etalase UMKM pada ekosistem Sirkula.
                     </p>
@@ -260,9 +265,12 @@
                         </div>
 
                         <div class="flex flex-1 flex-col gap-2 p-3.5">
-                            <div>
+                            <div class="flex flex-wrap items-center justify-between gap-1.5">
                                 <span class="inline-block rounded-md px-2.5 py-1 text-[11px] font-semibold {{ $item['badge_bg'] }}">
                                     {{ $item['badge'] }}
+                                </span>
+                                <span class="inline-block rounded-md border border-[#e3e8e5] bg-[#f7faf7] px-2 py-0.5 text-[10px] font-semibold text-[#6b7570]">
+                                    Contoh
                                 </span>
                             </div>
 
