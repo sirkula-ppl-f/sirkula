@@ -84,9 +84,26 @@ export function initAdminUsers() {
 
         const isActive = userStatus === 'ACTIVE';
 
-        // Highlight baris terpilih
+        // Highlight baris terpilih dan status tombol Pilih
         document.querySelectorAll('tr[data-user-row]').forEach((row) => {
-            row.classList.toggle('bg-brand-50/40', row.dataset.userRow === userId);
+            const isSelected = row.dataset.userRow === userId;
+            row.classList.toggle('bg-brand-50/40', isSelected);
+
+            const selectLink = row.querySelector('[data-select-user]');
+            if (selectLink) {
+                if (isSelected) {
+                    selectLink.setAttribute('aria-current', 'true');
+                } else {
+                    selectLink.removeAttribute('aria-current');
+                }
+                selectLink.classList.toggle('border-brand-600', isSelected);
+                selectLink.classList.toggle('bg-brand-50', isSelected);
+                selectLink.classList.toggle('text-brand-800', isSelected);
+                selectLink.classList.toggle('border-gray-300', !isSelected);
+                selectLink.classList.toggle('bg-white', !isSelected);
+                selectLink.classList.toggle('text-gray-800', !isSelected);
+                selectLink.classList.toggle('hover:bg-gray-50', !isSelected);
+            }
         });
 
         // Perbarui teks panel

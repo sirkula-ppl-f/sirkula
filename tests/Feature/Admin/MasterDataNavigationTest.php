@@ -42,6 +42,14 @@ class MasterDataNavigationTest extends TestCase
         // Tautan lama tanpa key 'active' tetap memakai 'route'. Logo juga mengarah ke dashboard, jadi cek semua tag.
         preg_match_all('/<a\b[^>]*href="'.preg_quote(route('dashboard'), '/').'"[^>]*>/', $html, $cocok);
         $this->assertCount(1, array_filter($cocok[0], fn (string $tag) => str_contains($tag, 'aria-current="page"')), 'Tautan Beranda harus aktif di dashboard.');
+
+        // Tombol toggle menu seluler terhubung ke panel navigasi dan disembunyikan secara bawaan (progressive enhancement).
+        $this->assertSame(1, preg_match('/<button\b[^>]*dusk="nav-toggle"[^>]*>/', $html, $toggle));
+        $this->assertStringContainsString('data-nav-toggle', $toggle[0]);
+        $this->assertStringContainsString('aria-controls="nav-menu-panel"', $toggle[0]);
+        $this->assertStringContainsString('aria-expanded="false"', $toggle[0]);
+        $this->assertStringContainsString('hidden', $toggle[0]);
+        $this->assertStringContainsString('id="nav-menu-panel"', $html);
     }
 
     public function test_warga_tidak_melihat_tautan_kategori_dan_material(): void
