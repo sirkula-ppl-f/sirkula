@@ -192,3 +192,111 @@ $links[] = ['label' => 'Hub', 'route' => 'admin.hubs.index', 'active' => 'admin.
 
 - `active`: pola `request()->routeIs()` untuk menandai tautan aktif (`aria-current="page"`). Bawaannya nilai `route`.
 - `dusk`: atribut `dusk` pada tautan, untuk selector tes Dusk.
+
+## Harga acuan material (PBI-05)
+
+Admin menerbitkan harga acuan material dalam **rupiah per kg per provinsi**, lengkap dengan tanggal berlaku dan sumber harga. Harga acuan hanya **informatif**: tidak pernah mengubah harga yang ditetapkan penjual (`listings.price`), dan tidak ada kode PBI-05 yang menulis ke tabel `listings`.
+
+### Tabel `reference_prices`
+
+| Kolom | Isi |
+|---|---|
+| `id` | |
+| `material_id` | FK `materials`, `restrictOnDelete` |
+| `region_id` | FK `regions`, `restrictOnDelete`. Selalu **provinsi** (`regions.parent_id` null) |
+| `price_per_kg` | rupiah bulat, 1 sampai 10.000.000 |
+| `effective_date` | tanggal berlaku, disimpan `Y-m-d` |
+| `source` | sumber harga, wajib, maks. 255 karakter |
+| `published_by` | FK `users` (admin penerbit), `restrictOnDelete` |
+| `created_at` | waktu terbit (UTC, ditampilkan dalam WIB). Tidak ada `updated_at` |
+
+Index: `(material_id, region_id, effective_date)`.
+
+Karena FK `restrict`, material, provinsi, dan akun admin yang sudah punya harga acuan **tidak bisa dihapus**. Material seperti itu dianggap "dipakai" (`$material->isInUse()`), jadi hanya bisa dinonaktifkan.
+
+### Append-only
+
+- Entri yang sudah terbit tidak bisa diubah atau dihapus. Tidak ada route, tombol, maupun method service untuk itu.
+- `App\Models\ReferencePrice` melempar `ReferencePriceImmutableException` pada event `updating` dan `deleting`.
+- Koreksi salah input: terbitkan **entri baru** (boleh dengan tanggal berlaku yang sama; entri dengan id lebih besar yang dipakai).
+- **Keterbatasan:** update/delete massal lewat query builder (`ReferencePrice::where(...)->update()`, `DB::table('reference_prices')->update()/delete()`, `truncate`) tidak memicu event model, jadi tidak terjaga. Jangan pernah memakainya.
+
+### Arti "harga terbaru"
+
+Harga terbaru untuk pasangan material + provinsi adalah entri dengan `effective_date` <= **hari ini menurut WIB** (Asia/Jakarta), diurutkan `effective_date` terbaru lalu `id` terbesar.
+
+- "Hari ini" hanya dihitung di `ReferencePriceService::today()`. `config/app.php` tetap UTC.
+- Entri bertanggal berlaku di masa depan ("Terjadwal") tersimpan dan tampil di riwayat admin, tetapi belum dianggap berlaku di halaman publik maupun di `latestFor()`.
+- Daftar harga terbaru per pasangan memakai subquery berkorelasi (`ReferencePrice::latestPerPair($tanggal)`), bukan window function, supaya jalan di SQLite, MySQL 5.7/8, dan MariaDB.
+
+### Membaca harga acuan dari modul lain (PBI-08 dan PBI-10)
+
+Pakai **hanya** method ini:
+
+```php
+use App\Services\ReferencePriceService;
+
+// ReferencePriceService::latestFor(Material $material, Region $region, ?CarbonInterface $on = null): ?ReferencePrice
+$harga = app(ReferencePriceService::class)->latestFor($material, $region);
+
+if ($harga === null) {
+    // Tampilkan "Harga acuan belum tersedia".
+}
+
+$harga->price_per_kg;    // int, rupiah per kg
+$harga->effective_date;  // CarbonImmutable, tengah malam WIB
+$harga->source;          // string
+```
+
+- `$region` boleh kabupaten/kota (kalau nanti tabel `regions` berisi level itu). Service otomatis naik ke provinsi induknya lewat `parent_id`.
+- `$on` (opsional) adalah titik waktu; tanggalnya diambil dalam WIB. Bawaannya sekarang.
+- Material nonaktif **tidak** disaring. Modul pemanggil yang memutuskan perlu ditampilkan atau tidak.
+- Satu panggilan = 1–2 query. Cocok untuk form atau halaman detail, bukan untuk dipanggil per baris di daftar panjang.
+
+**Sumber region untuk listing** (`$listing->material` adalah relasi `belongsTo(Material::class)` yang perlu ditambahkan PBI-07/08; stub `Listing` saat ini belum punya):
+
+```php
+// Sekarang: listings belum punya region_id, jadi pakai wilayah penjual (users.region_id, bisa null).
+$region = $listing->seller?->region;
+
+// Bila PBI-07 menambah listings.region_id, pakai wilayah listing lebih dulu:
+// $region = $listing->region ?? $listing->seller?->region;
+
+$harga = ($listing->material && $region)
+    ? app(ReferencePriceService::class)->latestFor($listing->material, $region)
+    : null; // region atau material kosong: jangan panggil latestFor, tampilkan "belum tersedia"
+```
+
+### Larangan untuk modul lain
+
+- **Jangan menulis** ke `reference_prices` (insert, update, delete) dari modul lain. Penerbitan hanya lewat halaman admin harga acuan.
+- Jangan membuat FK dari tabel lain ke `reference_prices` tanpa diskusi dengan PIC PBI-05.
+- Jangan menyalin harga acuan ke `listings.price`. Harga penjual tetap ditentukan penjual.
+
+### Factory untuk tes modul lain
+
+```php
+ReferencePrice::factory()->create();   // material aktif, provinsi baru, sudah berlaku, penerbit admin baru
+ReferencePrice::factory()
+    ->forMaterial($material)
+    ->forRegion($provinsi)              // harus provinsi (parent_id null)
+    ->effectiveOn('2026-11-01')         // atau ->scheduled(7) untuk harga terjadwal
+    ->publishedBy($admin)
+    ->create(['price_per_kg' => 3500]);
+```
+
+Model `Region` tidak punya factory; buat provinsi dengan `Region::create(['name' => 'Provinsi Contoh', 'code' => 'P1'])`.
+
+### Seeder demo (hanya DB lokal)
+
+`DatabaseSeeder` **tidak** mengisi harga acuan, karena harga acuan sungguhan harus punya sumber nyata. Untuk demo di laptop sendiri:
+
+```powershell
+php artisan config:show database.connections.mysql.host   # pastikan 127.0.0.1/localhost
+php artisan db:seed --class=ReferencePriceDemoSeeder
+```
+
+- Butuh admin (`AdminSeeder`), material (`MasterDataSeeder`), dan provinsi (`WilayahIndonesiaSeeder`).
+- Mengisi 6 bulan riwayat untuk beberapa material dan provinsi, ditambah satu harga terjadwal. Sumbernya "Data contoh untuk demo".
+- **Jangan dijalankan di DB online bersama tim.** Seeder menolak jalan bila host DB bukan `127.0.0.1`/`localhost`. Karena entri harga acuan tidak bisa dihapus, data demo hanya bisa dibersihkan dengan `migrate:fresh` di DB lokal.
+- Aman dijalankan ulang: seeder dilewati bila data demo sudah ada.
