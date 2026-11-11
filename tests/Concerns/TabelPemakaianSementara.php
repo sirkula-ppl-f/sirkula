@@ -2,6 +2,7 @@
 
 namespace Tests\Concerns;
 
+use App\Models\ReferencePrice;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -17,6 +18,9 @@ use Illuminate\Support\Facades\Schema;
  *
  * Setelah tabel asli masuk develop, ganti pemakaian trait ini dengan factory listing/harga acuan,
  * karena kolom wajib di tabel asli tidak diisi oleh insert di sini.
+ *
+ * Tabel reference_prices asli sudah ada (PBI-05), jadi tambahHargaAcuan() memakai ReferencePriceFactory
+ * dan buatTabelReferencePrices() tidak lagi membuat tabel.
  */
 trait TabelPemakaianSementara
 {
@@ -94,11 +98,12 @@ trait TabelPemakaianSementara
         DB::table('listings')->insert($kolom);
     }
 
+    /**
+     * Harga acuan sungguhan (tabel asli PBI-05) untuk material ini, di provinsi baru.
+     */
     protected function tambahHargaAcuan(int $materialId): void
     {
-        $this->buatTabelReferencePrices();
-
-        DB::table('reference_prices')->insert(['material_id' => $materialId]);
+        ReferencePrice::factory()->create(['material_id' => $materialId]);
     }
 
     /**
