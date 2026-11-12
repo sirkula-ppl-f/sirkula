@@ -13,6 +13,7 @@ Panduan ini buat kamu yang baru mau mulai ngoding Sirkula. Ikuti urut dari atas 
 3. [Terima undangan GitHub](#3-terima-undangan-github)
 4. [Setting Git (sekali saja)](#4-setting-git-sekali-saja)
 5. [Clone dan jalankan project](#5-clone-dan-jalankan-project)
+   - [5d. DB online bersama tim](#5d-db-online-bersama-tim)
 6. [Setting VS Code](#6-setting-vs-code)
 7. [Alur kerja harian](#7-alur-kerja-harian)
 8. [Testing](#8-testing)
@@ -209,7 +210,125 @@ Atau buat database `sirkula` lewat phpMyAdmin / HeidiSQL di Laragon, lalu jalank
 
 Nanti kalau sudah pindah ke MySQL, kembalikan blok DB di `.env` seperti di `.env.example`, buat database, lalu `php artisan migrate`.
 
-### 5d. Isi key Midtrans (kalau mengerjakan fitur pembayaran)
+### 5d. DB online bersama tim
+
+Sejak November 2026 semua anggota memakai **satu database MySQL online** (`SI4810_PPL_F`). Satu database dipakai 7 orang, jadi **perintah yang salah dari satu laptop langsung menghapus data semua orang**. Tidak ada tombol undo.
+
+**Kredensial**
+
+- Minta kredensial DB online ke PM lewat **DM**. Tulis **hanya di `.env` kamu sendiri**.
+- Jangan pernah menulisnya di `SETUP.md`, `.env.example`, Slack publik, screenshot, atau chat AI (ChatGPT, Claude, Copilot, dll.).
+- Jangan jalankan `php artisan config:show database` tanpa key lengkap, karena password ikut tercetak di terminal.
+
+**Pola kerja**
+
+| Kegiatan | Database |
+|---|---|
+| Ngoding di branch feature | DB lokal (Laragon atau SQLite) |
+| Mencoba atau mereview PR teman | DB lokal |
+| Mencoba `develop` yang sudah merge, demo | DB online |
+
+Simpan dua blok DB di `.env` dan aktifkan salah satu. Contoh saat memakai DB lokal:
+
+```env
+# --- DB lokal (aktif) ---
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=sirkula
+DB_USERNAME=root
+DB_PASSWORD=
+
+# --- DB online bersama (nonaktif, isi dari PM lewat DM) ---
+# DB_CONNECTION=mysql
+# DB_HOST=<minta ke PM>
+# DB_PORT=<minta ke PM>
+# DB_DATABASE=<minta ke PM>
+# DB_USERNAME=<minta ke PM>
+# DB_PASSWORD=<minta ke PM>
+```
+
+Untuk pindah ke DB online, beri `#` di blok lokal dan hapus `#` di blok online.
+
+**Cek DB aktif sebelum perintah yang menulis ke DB**
+
+Sebelum `migrate`, `db:seed`, `tinker` yang mengubah data, atau perintah database lain, cek dulu:
+
+```powershell
+php artisan config:show database.connections.mysql.host
+```
+
+Lanjut hanya kalau hasilnya `127.0.0.1` atau `localhost`. Pengecualiannya hanya migrasi DB online sesuai langkah di bawah.
+
+**Session, cache, dan queue di lokal**
+
+Bawaan `.env.example` menyimpan session, cache, dan queue di database. Ganti di `.env` kamu:
+
+```env
+SESSION_DRIVER=file
+CACHE_STORE=file
+QUEUE_CONNECTION=sync
+```
+
+Alasannya:
+- Session login, cache, dan antrean tidak ikut menumpang di DB online saat `.env` mengarah ke sana.
+- Lebih cepat, karena setiap request tidak perlu bolak-balik ke server online.
+- `cache:clear` atau `queue:clear` dari laptop kamu tidak mengganggu orang lain.
+
+**Migrasi ke DB online**
+
+Hanya dari `develop` setelah PR merge, dan **hanya oleh orang yang me-merge PR itu**.
+
+1. Pindah ke `develop` terbaru:
+   ```powershell
+   git checkout develop
+   git pull
+   ```
+2. Arahkan `.env` ke DB online, lalu cek host dengan perintah di atas.
+3. Backup dulu: di HeidiSQL, klik kanan database → **Export database as SQL**, lalu simpan file `.sql` di laptop.
+4. Lihat SQL yang akan dijalankan. Pastikan isinya hanya migrasi dari PR yang baru merge:
+   ```powershell
+   php artisan migrate --pretend
+   ```
+5. Jalankan migrasi:
+   ```powershell
+   php artisan migrate
+   ```
+6. Umumkan di Slack tim: migrasi apa yang dijalankan.
+7. Kembalikan `.env` ke DB lokal.
+
+Tabel yang sudah ada di DB online diubah dengan **migrasi baru**, bukan dengan mengedit migrasi lama (lihat [aturan tim](#9-aturan-tim) nomor 4).
+
+**DO dan DON'T**
+
+| | Tindakan | Alasan |
+|---|---|---|
+| ✅ | Cek host sebelum perintah yang menulis ke DB | Memastikan kamu tidak terhubung ke DB online tanpa sadar |
+| ✅ | Branch feature dan review PR memakai DB lokal | Migrasi yang belum merge tidak masuk ke DB bersama |
+| ✅ | Backup dan `migrate --pretend` sebelum migrasi online | Ada cadangan dan kamu tahu persis apa yang berubah |
+| ✅ | Umumkan di Slack tim setiap migrasi di DB online | Anggota lain tahu kenapa skema berubah |
+| ❌ | `migrate:fresh`, `migrate:refresh`, `migrate:reset`, `migrate:rollback`, `db:wipe` | Menghapus tabel dan data semua orang |
+| ❌ | `migrate` dari branch yang belum merge | Skema DB online jadi berbeda dengan `develop`, aplikasi anggota lain error |
+| ❌ | `php artisan config:cache` di laptop | `phpunit.xml` jadi diabaikan, sehingga `php artisan test` memakai DB di `.env` dan bisa mengosongkannya |
+| ❌ | Menjalankan seeder dummy/demo | Data palsu bercampur dengan data tim |
+| ❌ | `db:seed` oleh lebih dari satu orang | `AdminSeeder` menimpa password admin sesuai `ADMIN_*` di `.env` masing-masing |
+| ❌ | Mengubah struktur tabel lewat HeidiSQL/phpMyAdmin | Tidak tercatat di migrasi, jadi laptop lain dan server tidak ikut berubah |
+| ❌ | Menghapus atau mengubah data milik orang lain | Banyak foreign key `restrict`; data orang lain bisa rusak atau perintah gagal di tengah jalan |
+| ❌ | `cache:clear`, `optimize:clear`, `queue:clear`, `queue:flush` selama driver masih `database` | Menghapus cache atau antrean semua orang |
+| ❌ | Tes upload file sambil terhubung ke DB online | Barisnya tersimpan di DB bersama, tetapi filenya hanya ada di laptop pengunggah |
+
+**Kalau terlanjur salah**
+
+1. Berhenti. Jangan jalankan perintah lain, termasuk `migrate:rollback` atau "perbaikan" sendiri.
+2. Kabari di Slack tim dan tag PM: perintah apa yang dijalankan, kapan, dan dari branch apa.
+3. PM yang memutuskan cara pemulihannya.
+
+**Testing tetap aman**
+
+- `php artisan test` memakai SQLite `:memory:` dari `phpunit.xml`, jadi DB di `.env` tidak tersentuh, asal config tidak di-cache (jalankan `php artisan config:clear` dulu). Pengaman di `tests/TestCase.php` membatalkan tes yang mengosongkan database bila DB aktif bukan DB tes.
+- `php artisan dusk` memakai `.env.dusk.local` (database `sirkula_dusk` di laptop kamu). Pengaman di `tests/DuskTestCase.php` membatalkan tes bila nama database tidak diakhiri `_dusk`. Lihat [Laravel Dusk](#laravel-dusk).
+
+### 5e. Isi key Midtrans (kalau mengerjakan fitur pembayaran)
 
 Minta key sandbox ke PIC pembayaran, lalu isi **di `.env` saja**:
 
@@ -221,7 +340,7 @@ MIDTRANS_IS_PRODUCTION=false
 
 > Jangan pernah menaruh key di `.env.example` atau di kode.
 
-### 5e. Jalankan aplikasi
+### 5f. Jalankan aplikasi
 
 Buka **dua terminal** di VS Code (klik ikon **+** di panel terminal).
 
@@ -241,7 +360,7 @@ Stop server dengan `Ctrl + C` di masing-masing terminal.
 
 > Jangan pakai `composer run dev` di Windows. Salah satu prosesnya (`pail`) butuh ekstensi yang tidak tersedia di Windows dan akan error.
 
-### 5f. Email lokal (Mailpit)
+### 5g. Email lokal (Mailpit)
 
 Email aplikasi (misalnya tautan reset kata sandi) dikirim ke **Mailpit**, bukan ke email sungguhan. `.env.example` sudah diatur ke SMTP `127.0.0.1:1025`.
 
@@ -338,6 +457,8 @@ npm install
 php artisan migrate
 ```
 
+> Jalankan `php artisan migrate` hanya bila `.env` mengarah ke DB lokal. Cek dulu dengan `php artisan config:show database.connections.mysql.host`. Lihat [5d. DB online bersama tim](#5d-db-online-bersama-tim).
+
 **4. Ngoding, lalu commit kecil-kecil**
 
 ```powershell
@@ -418,6 +539,7 @@ Kalau ragu waktu menyelesaikan conflict, tanya dulu ke pemilik kode yang bentrok
    composer install
    php artisan migrate
    ```
+   > `php artisan migrate` di sini hanya bila `.env` mengarah ke DB lokal. Branch teman belum merge, jadi jangan pernah di-migrate ke DB online. Lihat [5d. DB online bersama tim](#5d-db-online-bersama-tim).
 4. **Review changes** → pilih **Approve** atau **Request changes**.
 
 ---
@@ -434,7 +556,7 @@ Kalau ragu waktu menyelesaikan conflict, tanya dulu ke pemilik kode yang bentrok
 
 ### Laravel Dusk
 
-Dusk membuka Chrome otomatis untuk menguji halaman seperti pengguna sungguhan. Dusk memakai database terpisah, `sirkula_dusk`, yang **dikosongkan setiap kali tes jalan**. Data di database `sirkula` kamu tidak tersentuh.
+Dusk membuka Chrome otomatis untuk menguji halaman seperti pengguna sungguhan. Dusk memakai database terpisah, `sirkula_dusk`, yang **dikosongkan setiap kali tes jalan**. Data di database `sirkula` kamu dan di DB online bersama tidak tersentuh, asal `.env.dusk.local` mengarah ke `sirkula_dusk` di laptop kamu.
 
 **Persiapan (sekali saja):**
 
@@ -499,6 +621,7 @@ Kalau CI merah, klik **Details** di PR untuk lihat langkah mana yang gagal, perb
 6. **Mau tambah paket Composer atau npm baru?** Diskusikan dulu di grup, karena semua anggota harus ikut install.
 7. **Logika harga, stok, dan status pembayaran hanya di server.** Jangan hitung di JavaScript.
 8. **Pull `develop` sebelum mulai ngoding** setiap hari supaya conflict tidak menumpuk.
+9. **DB online bersama.** Branch feature dan review PR memakai DB lokal. Cek host sebelum perintah yang menulis ke DB. Jangan jalankan `migrate:fresh`/`refresh`/`reset`/`rollback`, `db:wipe`, `config:cache`, atau seeder demo ke DB online. Aturan lengkap ada di [5d. DB online bersama tim](#5d-db-online-bersama-tim).
 
 ---
 
@@ -570,7 +693,8 @@ git checkout develop
 git pull
 composer install
 npm install
-php artisan migrate
+php artisan config:show database.connections.mysql.host   # pastikan 127.0.0.1/localhost
+php artisan migrate                # hanya bila .env mengarah ke DB lokal (lihat 5d)
 
 # --- Mulai PBI baru ---
 git checkout -b feature/PBI-XX-nama-singkat
@@ -597,12 +721,13 @@ php artisan make:policy NamaPolicy --model=NamaModel
 php artisan make:test NamaTest
 php artisan dusk:make NamaDuskTest
 
-# --- Database ---
-php artisan migrate                # jalankan migration baru
-php artisan migrate:fresh --seed   # reset database + isi data dummy (hati-hati, data lokal hilang)
+# --- Database (khusus DB lokal, lihat 5d) ---
+php artisan config:show database.connections.mysql.host   # cek DB aktif dulu
+php artisan migrate                # jalankan migration baru (DB lokal)
+php artisan migrate:fresh --seed   # reset database + isi data dummy (DB lokal SAJA, dilarang di DB online)
 
 # --- Bersihkan cache kalau perubahan tidak muncul ---
-php artisan optimize:clear
+php artisan optimize:clear         # ikut menjalankan cache:clear; aman bila CACHE_STORE=file (lihat 5d)
 ```
 
 ---
