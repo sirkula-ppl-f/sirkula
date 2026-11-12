@@ -9,6 +9,7 @@ use App\Models\User;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 /**
  * Harga acuan material per provinsi (PBI-05, FR-008).
@@ -85,6 +86,102 @@ class ReferencePriceService
     }
 
     /**
+     * Riwayat semua entri untuk halaman admin, terbaru di atas, termasuk entri terjadwal dan
+     * entri material nonaktif. Atribut current_id ikut dimuat untuk label Berlaku/Riwayat.
+     *
+     * @param  array{material?: ?int, region?: ?int, from?: ?string, until?: ?string}  $filters  tanggal 'Y-m-d'
+     * @return LengthAwarePaginator<int, ReferencePrice>
+     */
+    public function paginateHistory(array $filters = []): LengthAwarePaginator
+    {
+        $query = ReferencePrice::query()
+            ->with(['material', 'region', 'publisher'])
+            ->withCurrentId($this->today()->toDateString());
+
+        if (isset($filters['material'])) {
+            $query->where($query->qualifyColumn('material_id'), $filters['material']);
+        }
+
+        if (isset($filters['region'])) {
+            $query->where($query->qualifyColumn('region_id'), $filters['region']);
+        }
+
+        if (isset($filters['from'])) {
+            $query->where($query->qualifyColumn('effective_date'), '>=', $filters['from']);
+        }
+
+        if (isset($filters['until'])) {
+            $query->where($query->qualifyColumn('effective_date'), '<=', $filters['until']);
+        }
+
+        return $query->newestFirst()
+            ->paginate(self::PER_PAGE)
+            ->withQueryString();
+    }
+
+    /**
+     * Pilihan provinsi (region dengan parent_id null), urut nama.
+     *
+     * @return array<int, string> id => nama
+     */
+    public function provinceOptions(): array
+    {
+        return Region::query()->whereNull('parent_id')->orderBy('name')->orderBy('id')->pluck('name', 'id')->all();
+    }
+
+    /**
+     * Pilihan material untuk form terbitkan: hanya material aktif.
+     *
+     * @return array<int, string> id => nama
+     */
+    public function activeMaterialOptions(): array
+    {
+        return Material::active()->orderBy('name')->orderBy('id')->pluck('name', 'id')->all();
+    }
+
+    /**
+     * Pilihan material untuk filter riwayat admin: semua material, yang nonaktif diberi tanda.
+     *
+     * @return array<int, string> id => nama
+     */
+    public function materialFilterOptions(): array
+    {
+        return Material::query()->orderBy('name')->orderBy('id')->get(['id', 'name', 'is_active'])
+            ->mapWithKeys(fn (Material $material) => [
+                $material->id => $material->is_active
+                    ? $material->name
+                    : __('reference-prices.admin.inactive_material_option', ['name' => $material->name]),
+            ])
+            ->all();
+    }
+
+    /**
+     * Harga yang sedang berlaku untuk pilihan di form terbitkan (misalnya old input setelah validasi gagal).
+     * null bila material atau provinsi tidak dipilih atau tidak valid.
+     *
+     * @return array{material: Material, region: Region, price: ?ReferencePrice}|null
+     */
+    public function currentForSelection(mixed $materialId, mixed $regionId): ?array
+    {
+        if (! $this->isId($materialId) || ! $this->isId($regionId)) {
+            return null;
+        }
+
+        $material = Material::query()->find((int) $materialId);
+        $region = Region::query()->whereNull('parent_id')->find((int) $regionId);
+
+        if ($material === null || $region === null) {
+            return null;
+        }
+
+        return [
+            'material' => $material,
+            'region' => $region,
+            'price' => $this->latestFor($material, $region),
+        ];
+    }
+
+    /**
      * Harga acuan terbaru untuk material di provinsi $region pada saat $on (bawaan: sekarang).
      *
      * - "Terbaru": effective_date <= tanggal $on di WIB, urut effective_date terbaru lalu id terbesar.
@@ -126,5 +223,13 @@ class ReferencePriceService
         }
 
         return $current;
+    }
+
+    /**
+     * Bilangan bulat positif (int, atau string berisi angka saja).
+     */
+    private function isId(mixed $value): bool
+    {
+        return (is_int($value) && $value > 0) || (is_string($value) && ctype_digit($value) && (int) $value > 0);
     }
 }

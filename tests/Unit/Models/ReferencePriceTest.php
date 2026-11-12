@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Models;
 
+use App\Enums\ReferencePriceStatus;
 use App\Exceptions\ReferencePriceImmutableException;
 use App\Models\Material;
 use App\Models\ReferencePrice;
@@ -12,6 +13,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use LogicException;
 use Tests\TestCase;
 
 class ReferencePriceTest extends TestCase
@@ -166,6 +168,36 @@ class ReferencePriceTest extends TestCase
             [$plastikA->id, $plastikB->id, $kertasA->id],
             ReferencePrice::latestPerPair('2026-11-11')->pluck('id')->all()
         );
+    }
+
+    public function test_status_dihitung_dari_current_id_dan_tanggal_hari_ini(): void
+    {
+        $material = Material::factory()->create();
+        $provinsi = $this->provinsi('PS');
+        $buat = fn (string $tanggal) => ReferencePrice::factory()->forMaterial($material)->forRegion($provinsi)->effectiveOn($tanggal)->create();
+
+        $riwayat = $buat('2026-10-01');
+        $berlaku = $buat('2026-11-11');
+        $terjadwal = $buat('2026-11-12');
+        $hariIni = CarbonImmutable::parse('2026-11-11', 'Asia/Jakarta');
+
+        $hasil = ReferencePrice::withCurrentId('2026-11-11')->get()->keyBy('id');
+
+        $this->assertSame(ReferencePriceStatus::History, $hasil[$riwayat->id]->statusOn($hariIni));
+        $this->assertSame(ReferencePriceStatus::Current, $hasil[$berlaku->id]->statusOn($hariIni));
+        $this->assertSame(ReferencePriceStatus::Scheduled, $hasil[$terjadwal->id]->statusOn($hariIni));
+        $this->assertSame('Berlaku', ReferencePriceStatus::Current->label());
+        $this->assertSame('Terjadwal', ReferencePriceStatus::Scheduled->label());
+        $this->assertSame('Riwayat', ReferencePriceStatus::History->label());
+    }
+
+    public function test_status_berlaku_atau_riwayat_butuh_scope_with_current_id(): void
+    {
+        $harga = ReferencePrice::factory()->effectiveOn('2026-11-01')->create();
+
+        $this->expectException(LogicException::class);
+
+        $harga->fresh()->statusOn(CarbonImmutable::parse('2026-11-11', 'Asia/Jakarta'));
     }
 
     public function test_scope_newest_first_mengurutkan_tanggal_lalu_id(): void

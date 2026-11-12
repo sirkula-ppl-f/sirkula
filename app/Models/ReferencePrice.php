@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\ReferencePriceStatus;
 use App\Exceptions\ReferencePriceImmutableException;
 use App\Services\ReferencePriceService;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Database\Factories\ReferencePriceFactory;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -17,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Date;
+use LogicException;
 
 /**
  * Harga acuan material per provinsi dalam rupiah per kg (PBI-05, FR-008).
@@ -135,11 +138,46 @@ class ReferencePrice extends Model
         $query->where($query->qualifyColumn('id'), '=', self::latestIdForPair($query, $date));
     }
 
+    /**
+     * Tambah atribut current_id: id harga terbaru untuk pasangan material + provinsi baris ini pada
+     * tanggal $date ('Y-m-d', WIB). Dipakai statusOn() tanpa query per baris.
+     */
+    #[Scope]
+    protected function withCurrentId(Builder $query, string $date): void
+    {
+        if ($query->getQuery()->columns === null) {
+            $query->select($query->qualifyColumn('*'));
+        }
+
+        $query->selectSub(self::latestIdForPair($query, $date), 'current_id');
+    }
+
     #[Scope]
     protected function newestFirst(Builder $query): void
     {
         $query->orderByDesc($query->qualifyColumn('effective_date'))
             ->orderByDesc($query->qualifyColumn('id'));
+    }
+
+    /**
+     * Status entri pada hari $today (WIB). Untuk membedakan Berlaku dan Riwayat, entri harus diambil
+     * dengan scope withCurrentId() memakai tanggal yang sama.
+     *
+     * @throws LogicException bila current_id belum dimuat
+     */
+    public function statusOn(CarbonInterface $today): ReferencePriceStatus
+    {
+        if ($this->effective_date->toDateString() > $today->toDateString()) {
+            return ReferencePriceStatus::Scheduled;
+        }
+
+        if (! array_key_exists('current_id', $this->attributes)) {
+            throw new LogicException('Ambil harga acuan dengan scope withCurrentId() sebelum memanggil statusOn().');
+        }
+
+        return (int) $this->attributes['current_id'] === $this->id
+            ? ReferencePriceStatus::Current
+            : ReferencePriceStatus::History;
     }
 
     /**
