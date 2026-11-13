@@ -3,6 +3,7 @@
 namespace Tests\Browser;
 
 use App\Models\Hub;
+use App\Models\HubManager;
 use App\Models\Region;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
@@ -136,5 +137,49 @@ class HubManagementTest extends DuskTestCase
             'id' => $hub->id,
             'status' => 'ARCHIVED',
         ]);
+    }
+
+    public function test_admin_dapat_menugaskan_lalu_menonaktifkan_pengelola_melalui_browser(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $pengelola = User::factory()->create();
+        $region = $this->buatWilayah();
+        $hub = $this->buatHub($region);
+
+        $this->browse(function (Browser $browser) use ($admin, $pengelola, $hub) {
+            $browser->loginAs($admin)
+                ->visit('/admin/hubs/'.$hub->id)
+                ->assertSee('Pengelola Hub')
+                ->select('select[name="user_id"]', (string) $pengelola->id)
+                ->click('form[action="'.route('admin.hubs.managers.store', $hub).'"] button[type="submit"]')
+                ->waitForText($pengelola->name)
+                ->assertSee('Aktif');
+
+            $manager = HubManager::query()
+                ->where('hub_id', $hub->id)
+                ->where('user_id', $pengelola->id)
+                ->firstOrFail();
+
+            $browser->click('[dusk="hub-manager-deactivate-button-'.$manager->id.'"]')
+                ->waitFor('[dusk="confirm-dialog"][open]')
+                ->click('[dusk="confirm-dialog-confirm"]')
+                ->waitUntilMissing('[dusk="confirm-dialog"][open]')
+                ->waitForText('Nonaktif')
+                ->assertPresent('[dusk="hub-manager-row-'.$manager->id.'"]');
+        });
+
+        $manager = HubManager::query()
+            ->where('hub_id', $hub->id)
+            ->where('user_id', $pengelola->id)
+            ->firstOrFail();
+
+        $this->assertDatabaseHas('hub_managers', [
+            'id' => $manager->id,
+            'hub_id' => $hub->id,
+            'user_id' => $pengelola->id,
+            'assignment_status' => 'INACTIVE',
+        ]);
+
+        $this->assertNotNull($manager->fresh()->deactivated_at);
     }
 }

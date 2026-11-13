@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreHubRequest;
 use App\Http\Requests\Admin\UpdateHubRequest;
 use App\Models\Hub;
 use App\Models\Region;
+use App\Models\User;
 use App\Services\HubService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -68,10 +70,26 @@ class HubController extends Controller
     {
         $hub->load([
             'region',
-            'managers.user',
+            'managers' => fn ($query) => $query
+                ->with('user')
+                ->orderByDesc('assigned_at')
+                ->orderByDesc('id'),
         ]);
 
-        return view('admin.hubs.show', compact('hub'));
+        $eligibleUsers = User::query()
+            ->where('status', UserStatus::Active->value)
+            ->whereDoesntHave('hubAssignments', function ($query) use ($hub) {
+                $query
+                    ->where('hub_id', $hub->id)
+                    ->where('assignment_status', 'ACTIVE');
+            })
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+
+        return view('admin.hubs.show', compact(
+            'hub',
+            'eligibleUsers'
+        ));
     }
 
     /**
