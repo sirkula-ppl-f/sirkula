@@ -8,7 +8,7 @@
         </p>
     </div>
 
-    <div class="grid gap-4 sm:grid-cols-3">
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <a
             href="{{ route('admin.categories.index') }}"
             class="flex flex-col justify-between rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200 transition hover:ring-brand-600"
@@ -33,6 +33,20 @@
                 </p>
             </div>
             <span class="mt-4 text-sm font-semibold text-brand-700">Buka Material &rarr;</span>
+        </a>
+
+        <a
+            href="{{ route('admin.hubs.index') }}"
+            dusk="manage-hubs-link"
+            class="flex flex-col justify-between rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200 transition hover:ring-brand-600"
+        >
+            <div>
+                <h2 class="text-base font-semibold text-gray-900">Hub</h2>
+                <p class="mt-1 text-sm text-gray-600">
+                    Kelola data Hub, wilayah, status, dan penugasan pengelolanya.
+                </p>
+            </div>
+            <span class="mt-4 text-sm font-semibold text-brand-700">Buka Hub &rarr;</span>
         </a>
 
         <a
