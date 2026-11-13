@@ -29,7 +29,7 @@ class HubManagerController extends Controller
 
         return redirect()
             ->route('admin.hubs.show', $hub)
-            ->with('success', 'Pengelola Hub berhasil ditugaskan.');
+            ->with('success', __('hub.flash.manager_assigned', [], 'id'));
     }
 
     /**
@@ -47,11 +47,11 @@ class HubManagerController extends Controller
         if (! $deactivated) {
             return redirect()
                 ->route('admin.hubs.show', $hub)
-                ->with('info', 'Penugasan sudah tidak aktif.');
+                ->with('info', __('hub.flash.manager_already_inactive', [], 'id'));
         }
 
         return redirect()
             ->route('admin.hubs.show', $hub)
-            ->with('success', 'Penugasan pengelola berhasil dinonaktifkan.');
+            ->with('success', __('hub.flash.manager_deactivated', [], 'id'));
     }
 }

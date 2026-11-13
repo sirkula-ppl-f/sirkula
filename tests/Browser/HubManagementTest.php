@@ -48,7 +48,7 @@ class HubManagementTest extends DuskTestCase
 
         $this->browse(function (Browser $browser) use ($admin) {
             $browser->loginAs($admin)
-                ->visit('/admin/hubs')
+                ->visit('/admin/pusat-komunitas')
                 ->assertSee('Manajemen Hub')
                 ->assertSee('Hub Bandung')
                 ->assertSee('Hub Cimahi')
@@ -66,7 +66,7 @@ class HubManagementTest extends DuskTestCase
 
         $this->browse(function (Browser $browser) use ($admin, $region) {
             $browser->loginAs($admin)
-                ->visit('/admin/hubs/create')
+                ->visit('/admin/pusat-komunitas/tambah')
                 ->assertSee('Tambah Hub')
                 ->type('input[name="name"]', 'Hub Daur Ulang')
                 ->select('select[name="type"]', 'RW')
@@ -94,7 +94,7 @@ class HubManagementTest extends DuskTestCase
 
         $this->browse(function (Browser $browser) use ($admin, $region, $hub) {
             $browser->loginAs($admin)
-                ->visit('/admin/hubs/'.$hub->id.'/edit')
+                ->visit('/admin/pusat-komunitas/'.$hub->id.'/ubah')
                 ->assertSee('Edit Hub')
                 ->clear('input[name="name"]')
                 ->type('input[name="name"]', 'Hub Bandung Diperbarui')
@@ -126,10 +126,13 @@ class HubManagementTest extends DuskTestCase
 
         $this->browse(function (Browser $browser) use ($admin, $hub) {
             $browser->loginAs($admin)
-                ->visit('/admin/hubs')
+                ->visit('/admin/pusat-komunitas')
                 ->assertSee('Hub Bandung')
                 ->click('form[action="'.route('admin.hubs.archive', $hub).'"] button')
-                ->acceptDialog()
+                ->waitFor('[data-confirm-dialog][open]')
+                ->assertSee('Arsipkan Hub')
+                ->click('[dusk="confirm-dialog-confirm"]')
+                ->waitUntilMissing('[data-confirm-dialog][open]')
                 ->waitForText('Hub berhasil diarsipkan.');
         });
 
@@ -148,7 +151,7 @@ class HubManagementTest extends DuskTestCase
 
         $this->browse(function (Browser $browser) use ($admin, $pengelola, $hub) {
             $browser->loginAs($admin)
-                ->visit('/admin/hubs/'.$hub->id)
+                ->visit('/admin/pusat-komunitas/'.$hub->id)
                 ->assertSee('Pengelola Hub')
                 ->select('select[name="user_id"]', (string) $pengelola->id)
                 ->click('form[action="'.route('admin.hubs.managers.store', $hub).'"] button[type="submit"]')
@@ -161,9 +164,9 @@ class HubManagementTest extends DuskTestCase
                 ->firstOrFail();
 
             $browser->click('[dusk="hub-manager-deactivate-button-'.$manager->id.'"]')
-                ->waitFor('[dusk="confirm-dialog"][open]')
+                ->waitFor('[data-confirm-dialog][open]')
                 ->click('[dusk="confirm-dialog-confirm"]')
-                ->waitUntilMissing('[dusk="confirm-dialog"][open]')
+                ->waitUntilMissing('[data-confirm-dialog][open]')
                 ->waitForText('Nonaktif')
                 ->assertPresent('[dusk="hub-manager-row-'.$manager->id.'"]');
         });

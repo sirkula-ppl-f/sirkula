@@ -60,7 +60,7 @@ class HubController extends Controller
 
         return redirect()
             ->route('admin.hubs.show', $hub)
-            ->with('success', 'Hub berhasil ditambahkan.');
+            ->with('success', __('hub.flash.created', [], 'id'));
     }
 
     /**
@@ -116,7 +116,7 @@ class HubController extends Controller
 
         return redirect()
             ->route('admin.hubs.show', $hub)
-            ->with('success', 'Hub berhasil diperbarui.');
+            ->with('success', __('hub.flash.updated', [], 'id'));
     }
 
     /**
@@ -128,6 +128,6 @@ class HubController extends Controller
 
         return redirect()
             ->route('admin.hubs.index')
-            ->with('success', 'Hub berhasil diarsipkan.');
+            ->with('success', __('hub.flash.archived', [], 'id'));
     }
 }

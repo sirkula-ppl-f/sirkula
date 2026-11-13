@@ -1,9 +1,11 @@
-<x-layouts.app title="Edit Hub">
+<x-layouts.app :title="__('hub.edit.title', [], 'id')">
     <div class="mx-auto max-w-3xl">
         <div class="mb-6">
-            <h1 class="text-2xl font-bold">Edit Hub</h1>
+            <h1 class="text-2xl font-bold">
+                {{ __('hub.edit.title', [], 'id') }}
+            </h1>
             <p class="text-sm text-gray-600">
-                Perbarui informasi Hub yang sudah terdaftar.
+                {{ __('hub.edit.description', [], 'id') }}
             </p>
         </div>
 

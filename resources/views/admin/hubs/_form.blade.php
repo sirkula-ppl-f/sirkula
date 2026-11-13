@@ -6,7 +6,7 @@
 
 <div>
     <label for="name" class="mb-1 block font-medium">
-        Nama Hub
+        {{ __('hub.fields.name', [], 'id') }}
     </label>
 
     <input
@@ -26,7 +26,7 @@
 
 <div>
     <label for="type" class="mb-1 block font-medium">
-        Tipe Hub
+        {{ __('hub.fields.type', [], 'id') }}
     </label>
 
     <select
@@ -35,12 +35,14 @@
         required
         class="w-full rounded-lg border border-gray-300 p-3"
     >
-        <option value="">Pilih tipe</option>
+        <option value="">
+            {{ __('hub.form.choose_type', [], 'id') }}
+        </option>
 
         @foreach ([
-            'BANK_SAMPAH' => 'Bank Sampah',
-            'RW' => 'RW',
-            'KOMUNITAS' => 'Komunitas'
+            'BANK_SAMPAH' => __('hub.types.BANK_SAMPAH', [], 'id'),
+            'RW' => __('hub.types.RW', [], 'id'),
+            'KOMUNITAS' => __('hub.types.KOMUNITAS', [], 'id'),
         ] as $value => $label)
             <option
                 value="{{ $value }}"
@@ -58,7 +60,7 @@
 
 <div>
     <label for="region_id" class="mb-1 block font-medium">
-        Wilayah
+        {{ __('hub.fields.region', [], 'id') }}
     </label>
 
     <select
@@ -67,7 +69,9 @@
         required
         class="w-full rounded-lg border border-gray-300 p-3"
     >
-        <option value="">Pilih wilayah</option>
+        <option value="">
+            {{ __('hub.form.choose_region', [], 'id') }}
+        </option>
 
         @foreach ($regions as $region)
             <option
@@ -86,7 +90,7 @@
 
 <div>
     <label for="public_address" class="mb-1 block font-medium">
-        Alamat Publik
+        {{ __('hub.fields.public_address', [], 'id') }}
     </label>
 
     <textarea
@@ -105,7 +109,7 @@
 
 <div>
     <label for="description" class="mb-1 block font-medium">
-        Deskripsi
+        {{ __('hub.fields.description', [], 'id') }}
     </label>
 
     <textarea
@@ -126,13 +130,15 @@
         type="submit"
         class="rounded-lg bg-blue-600 px-5 py-2 text-white"
     >
-        {{ $method === 'PUT' ? 'Perbarui Hub' : 'Simpan Hub' }}
+        {{ $method === 'PUT'
+            ? __('hub.form.update', [], 'id')
+            : __('hub.form.save', [], 'id') }}
     </button>
 
     <a
         href="{{ route('admin.hubs.index') }}"
         class="rounded-lg bg-gray-100 px-5 py-2 text-gray-700"
     >
-        Batal
+        {{ __('hub.form.cancel', [], 'id') }}
     </a>
 </div>

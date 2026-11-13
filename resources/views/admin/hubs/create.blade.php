@@ -1,9 +1,11 @@
-<x-layouts.app title="Tambah Hub">
+<x-layouts.app :title="__('hub.create.title', [], 'id')">
     <div class="mx-auto max-w-3xl">
         <div class="mb-6">
-            <h1 class="text-2xl font-bold">Tambah Hub</h1>
+            <h1 class="text-2xl font-bold">
+                {{ __('hub.create.title', [], 'id') }}
+            </h1>
             <p class="text-sm text-gray-600">
-                Tambahkan bank sampah, RW, atau komunitas.
+                {{ __('hub.create.description', [], 'id') }}
             </p>
         </div>
 
