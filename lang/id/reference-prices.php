@@ -141,6 +141,80 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Halaman publik
+    |--------------------------------------------------------------------------
+    */
+
+    'public' => [
+        'index_title' => 'Harga Acuan Material',
+        'intro' => 'Harga acuan material daur ulang dalam rupiah per kg untuk setiap provinsi, lengkap dengan tanggal berlaku dan sumber harganya.',
+        'informative' => 'Harga acuan bersifat informatif dan tidak mengikat harga penjual. Harga jual tetap ditentukan oleh masing-masing penjual, dan setiap harga acuan hanya berlaku untuk provinsi yang tercantum.',
+        'filter_label' => 'Filter harga acuan',
+        'filter' => [
+            'material' => 'Material',
+            'all_materials' => 'Semua material',
+            'region' => 'Provinsi',
+            'all_regions' => 'Semua provinsi',
+            'apply' => 'Terapkan',
+            'reset' => 'Reset',
+        ],
+        'table_label' => 'Tabel harga acuan terbaru',
+        'table_caption' => 'Harga acuan terbaru per material dan provinsi, halaman :page dari :last',
+        'columns' => [
+            'material' => 'Material',
+            'region' => 'Provinsi',
+            'price' => 'Harga/kg',
+            'effective_date' => 'Berlaku sejak',
+            'source' => 'Sumber',
+            'history' => 'Riwayat',
+        ],
+        'history_link' => 'Lihat riwayat',
+        'history_link_context' => 'harga :material di :region',
+        'empty' => 'Belum ada harga acuan yang berlaku.',
+        'empty_filtered' => 'Tidak ada harga acuan yang cocok dengan filter.',
+        'empty_reset' => 'Tampilkan semua harga acuan',
+
+        'show_title' => ':material di :region',
+        'back' => 'Kembali ke daftar harga acuan',
+        'latest' => [
+            'title' => 'Harga terbaru',
+            'effective_date' => 'Berlaku sejak',
+            'source' => 'Sumber',
+        ],
+        'trend' => [
+            'title' => 'Tren harga',
+            'intro' => 'Satu titik untuk setiap tanggal berlaku, paling banyak :max tanggal terakhir. Angka lengkapnya ada di tabel riwayat.',
+        ],
+        'history' => [
+            'title' => 'Riwayat harga',
+            'intro' => 'Semua harga yang sudah berlaku, terbaru di atas. Koreksi diterbitkan sebagai entri baru; bila tanggal berlakunya sama, entri yang terbit paling akhir yang dipakai.',
+            'table_label' => 'Tabel riwayat harga',
+            'table_caption' => 'Riwayat harga :material di :region, terbaru di atas, halaman :page dari :last',
+            'columns' => [
+                'effective_date' => 'Tanggal berlaku',
+                'price' => 'Harga/kg',
+                'source' => 'Sumber',
+                'status' => 'Status',
+            ],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Grafik tren (<x-reference-price.trend-chart>)
+    |--------------------------------------------------------------------------
+    */
+
+    'chart' => [
+        'title' => 'Grafik tren harga acuan :material di :region',
+        'summary' => 'Harga dari :from_price (:from_date) menjadi :to_price (:to_date), :count data.',
+        'summary_single' => 'Harga :price sejak :date, 1 data.',
+        'single_point' => 'Baru ada satu data harga.',
+        'point' => ':date: :price',
+    ],
+
     'demo_seeder' => [
         'source' => 'Data contoh untuk demo',
         'not_local' => 'ReferencePriceDemoSeeder dibatalkan: DB aktif bukan DB lokal. Seeder ini hanya untuk DB lokal, bukan DB online tim.',

@@ -6,10 +6,13 @@ use App\Models\Material;
 use App\Models\ReferencePrice;
 use App\Models\Region;
 use App\Models\User;
+use App\Support\TrendChart;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 
 /**
  * Harga acuan material per provinsi (PBI-05, FR-008).
@@ -117,6 +120,102 @@ class ReferencePriceService
         return $query->newestFirst()
             ->paginate(self::PER_PAGE)
             ->withQueryString();
+    }
+
+    /**
+     * Harga terbaru per pasangan material + provinsi untuk halaman publik, urut nama material lalu
+     * nama provinsi. Hanya material aktif, region provinsi, dan entri yang sudah berlaku hari ini (WIB).
+     * Relasi material dan region dimuat sekaligus, jadi jumlah query tidak bergantung pada jumlah baris.
+     *
+     * @param  array{material?: ?int, region?: ?int}  $filters
+     * @return LengthAwarePaginator<int, ReferencePrice>
+     */
+    public function paginateLatest(array $filters = []): LengthAwarePaginator
+    {
+        $table = (new ReferencePrice)->getTable();
+
+        $query = ReferencePrice::query()
+            ->select($table.'.*')
+            ->join('materials', 'materials.id', '=', $table.'.material_id')
+            ->join('regions', 'regions.id', '=', $table.'.region_id')
+            ->where('materials.is_active', true)
+            ->whereNull('regions.parent_id')
+            ->latestPerPair($this->today()->toDateString())
+            ->with(['material', 'region']);
+
+        if (isset($filters['material'])) {
+            $query->where($table.'.material_id', $filters['material']);
+        }
+
+        if (isset($filters['region'])) {
+            $query->where($table.'.region_id', $filters['region']);
+        }
+
+        return $query->orderBy('materials.name')
+            ->orderBy('materials.id')
+            ->orderBy('regions.name')
+            ->orderBy('regions.id')
+            ->paginate(self::PER_PAGE)
+            ->withQueryString();
+    }
+
+    /**
+     * Harga terbaru untuk halaman publik. null bila material nonaktif, region bukan provinsi,
+     * atau pasangan ini belum punya entri yang sudah berlaku (entri terjadwal tidak dihitung).
+     */
+    public function publicLatestFor(Material $material, Region $region): ?ReferencePrice
+    {
+        if (! $material->is_active || $region->parent_id !== null) {
+            return null;
+        }
+
+        return $this->latestFor($material, $region);
+    }
+
+    /**
+     * Riwayat publik satu pasangan material + provinsi: semua entri yang sudah berlaku (termasuk koreksi
+     * bertanggal sama), terbaru di atas. Atribut current_id ikut dimuat untuk label Berlaku/Riwayat.
+     *
+     * @return LengthAwarePaginator<int, ReferencePrice>
+     */
+    public function paginatePairHistory(Material $material, Region $region): LengthAwarePaginator
+    {
+        $today = $this->today()->toDateString();
+        $query = ReferencePrice::query();
+
+        return $query->where($query->qualifyColumn('material_id'), $material->getKey())
+            ->where($query->qualifyColumn('region_id'), $region->getKey())
+            ->effectiveOn($today)
+            ->withCurrentId($today)
+            ->newestFirst()
+            ->paginate(self::PER_PAGE)
+            ->withQueryString();
+    }
+
+    /**
+     * Data grafik tren satu pasangan: satu entri per tanggal berlaku (id terbesar di tanggal itu, sama
+     * dengan aturan harga terbaru), paling banyak TrendChart::MAX_POINTS tanggal terakhir yang sudah
+     * berlaku, urut kronologis (lama ke baru).
+     *
+     * @return EloquentCollection<int, ReferencePrice>
+     */
+    public function trendFor(Material $material, Region $region): EloquentCollection
+    {
+        $table = (new ReferencePrice)->getTable();
+        $today = $this->today()->toDateString();
+
+        return ReferencePrice::query()
+            ->whereIn('id', fn (QueryBuilder $latestPerDate) => $latestPerDate->from($table)
+                ->selectRaw('max(id)')
+                ->where('material_id', $material->getKey())
+                ->where('region_id', $region->getKey())
+                ->where('effective_date', '<=', $today)
+                ->groupBy('effective_date'))
+            ->orderByDesc('effective_date')
+            ->limit(TrendChart::MAX_POINTS)
+            ->get(['id', 'price_per_kg', 'effective_date'])
+            ->reverse()
+            ->values();
     }
 
     /**
