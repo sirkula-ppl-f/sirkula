@@ -576,7 +576,7 @@ Dusk membuka Chrome otomatis untuk menguji halaman seperti pengguna sungguhan. D
 
 **Menjalankan tes:**
 
-1. Siapkan aset: biarkan `npm run dev` menyala, atau jalankan `npm run build` sekali.
+1. Siapkan aset: biarkan `npm run dev` menyala, atau jalankan `npm run build`. Ulangi `npm run build` setiap ada class Tailwind atau JS baru; hasil build lama tidak memuat class baru, sehingga tampilan di tes (misalnya cek lebar 360px) bisa salah.
 2. Terminal 1, jalankan server **tanpa** `--no-reload`:
    ```powershell
    php artisan serve

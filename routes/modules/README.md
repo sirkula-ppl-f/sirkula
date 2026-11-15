@@ -229,6 +229,32 @@ Harga terbaru untuk pasangan material + provinsi adalah entri dengan `effective_
 - Entri bertanggal berlaku di masa depan ("Terjadwal") tersimpan dan tampil di riwayat admin, tetapi belum dianggap berlaku di halaman publik maupun di `latestFor()`.
 - Daftar harga terbaru per pasangan memakai subquery berkorelasi (`ReferencePrice::latestPerPair($tanggal)`), bukan window function, supaya jalan di SQLite, MySQL 5.7/8, dan MariaDB.
 
+### Route harga acuan
+
+File `routes/modules/reference-prices.php`. Tidak ada route ubah atau hapus.
+
+| Nama route | Method | URL | Akses |
+|---|---|---|---|
+| `reference-prices.index` | GET | `/harga-acuan` | publik (tamu, warga, admin) |
+| `reference-prices.show` | GET | `/harga-acuan/{material:slug}/{region:code}` | publik |
+| `admin.reference-prices.index` | GET | `/admin/harga-acuan` | admin |
+| `admin.reference-prices.create` | GET | `/admin/harga-acuan/terbitkan` | admin |
+| `admin.reference-prices.store` | POST | `/admin/harga-acuan` | admin |
+
+- Route publik tanpa middleware tambahan, sama dengan route katalog (PBI-10). Route admin di grup `['auth', 'active', 'role:ADMIN']`.
+- Tautan ke detail: `route('reference-prices.show', ['material' => $material, 'region' => $provinsi])` menghasilkan `/harga-acuan/{slug material}/{kode provinsi}`, misalnya `/harga-acuan/plastik-pet/32`.
+- `reference-prices.show` memakai `->withoutScopedBindings()`. Tanpa itu, Laravel mencari region lewat `$material->regions()` (karena dua binding key kustom bersarang) dan halaman error.
+- Navbar: tautan publik `dusk="nav-reference-prices"` (tamu, warga, admin) dan tautan admin `dusk="nav-admin-reference-prices"`. Karena teks "Kelola Harga Acuan" juga memuat "Harga Acuan", tes sebaiknya memakai atribut `dusk` dan `href`, bukan teks.
+
+### Halaman publik: apa yang tampil
+
+- Hanya entri yang **sudah berlaku** hari ini (WIB). Entri terjadwal tidak tampil di daftar, tabel riwayat, maupun grafik.
+- Hanya **material aktif** dan region **provinsi**. Halaman detail merespons 404 bila material nonaktif, region bukan provinsi, atau pasangan itu belum punya harga yang berlaku (termasuk bila yang ada hanya entri terjadwal).
+- **Nama penerbit tidak ditampilkan**, hanya harga, tanggal berlaku, dan sumber.
+- Daftar (`ReferencePriceService::paginateLatest()`): satu baris per pasangan (harga terbaru), urut nama material lalu nama provinsi, filter `material` dan `provinsi` (nilai yang bukan pilihan di form diabaikan), 15 per halaman.
+- Detail: kartu harga terbaru, grafik tren (`trendFor()`: satu titik per tanggal berlaku, yaitu entri dengan id terbesar di tanggal itu, maksimal 12 tanggal terakhir), dan tabel riwayat (`paginatePairHistory()`: semua entri yang sudah berlaku termasuk koreksi bertanggal sama, label Berlaku/Riwayat, 15 per halaman).
+- Parameter `kembali` di URL detail membawa filter daftar untuk tautan "Kembali". Hanya `material`, `provinsi`, dan `page` berisi bilangan bulat positif yang dipakai, dan URL-nya dibangun ulang dari nama route.
+
 ### Membaca harga acuan dari modul lain (PBI-08 dan PBI-10)
 
 Pakai **hanya** method ini:
@@ -273,6 +299,30 @@ $harga = ($listing->material && $region)
 - Jangan membuat FK dari tabel lain ke `reference_prices` tanpa diskusi dengan PIC PBI-05.
 - Jangan menyalin harga acuan ke `listings.price`. Harga penjual tetap ditentukan penjual.
 
+### Komponen dan helper yang boleh dipakai modul lain
+
+```blade
+@use('App\Support\IndonesianFormat')
+
+{{ IndonesianFormat::rupiah(3500) }}         {{-- Rp 3.500 --}}
+{{ IndonesianFormat::pricePerKg(3500) }}     {{-- Rp 3.500/kg --}}
+{{ IndonesianFormat::date($tanggal) }}       {{-- 8 Nov 2026 (tanggal dipakai apa adanya) --}}
+{{ IndonesianFormat::dateTimeWib($waktu) }}  {{-- 8 Nov 2026, 14.05 WIB (dipindah ke WIB dulu) --}}
+
+<x-reference-price.status-badge :status="$harga->statusOn($hariIni)" />
+
+<x-reference-price.trend-chart
+    :prices="$tren"
+    title="Grafik tren harga acuan Plastik PET di Provinsi Contoh"
+    id="grafik-plastik"
+/>
+```
+
+- `IndonesianFormat` (`app/Support`) untuk semua tampilan uang dan tanggal, supaya formatnya sama di semua halaman.
+- `<x-reference-price.status-badge>`: label teks Berlaku/Terjadwal/Riwayat, tidak hanya warna. `statusOn()` butuh entri yang diambil dengan scope `withCurrentId($tanggal)` memakai tanggal yang sama.
+- `<x-reference-price.trend-chart>`: grafik SVG dari server tanpa JS, `role="img"` dengan `<title>` dan `<desc>` (ringkasan harga awal dan akhir), tiap titik punya tooltip `<title>`. Ambil datanya dengan `ReferencePriceService::trendFor($material, $provinsi)`, jangan query sendiri. Butuh minimal satu data (kosong ditolak dengan `InvalidArgumentException`). Bila ada lebih dari satu grafik di satu halaman, beri `id` berbeda. Tetap sediakan tabel sebagai alternatif teks.
+- Koordinat grafik dihitung `App\Support\TrendChart`. Lebar grafik mengikuti wadah, maksimal 26rem (416px); viewBox 340×200 dengan teks 12, jadi teks ±10,4px di layar 360px dan ±14,7px di desktop.
+
 ### Factory untuk tes modul lain
 
 ```php
@@ -300,3 +350,12 @@ php artisan db:seed --class=ReferencePriceDemoSeeder
 - Mengisi 6 bulan riwayat untuk beberapa material dan provinsi, ditambah satu harga terjadwal. Sumbernya "Data contoh untuk demo".
 - **Jangan dijalankan di DB online bersama tim.** Seeder menolak jalan bila host DB bukan `127.0.0.1`/`localhost`. Karena entri harga acuan tidak bisa dihapus, data demo hanya bisa dibersihkan dengan `migrate:fresh` di DB lokal.
 - Aman dijalankan ulang: seeder dilewati bila data demo sudah ada.
+
+### Keterbatasan
+
+- Update/delete massal lewat query builder melewati guard append-only (lihat bagian Append-only).
+- Hanya level provinsi. `latestFor()` menaikkan kab/kota ke provinsi induknya, tetapi halaman publik hanya menerima kode provinsi.
+- "Hari ini" memakai WIB untuk seluruh Indonesia. Di WITA dan WIT, harga baru mulai berlaku pukul 01.00 dan 02.00 waktu setempat.
+- Grafik hanya menampilkan 12 tanggal berlaku terakhir. Riwayat lengkap ada di tabel.
+- Tidak ada ubah atau hapus. Koreksi dilakukan dengan menerbitkan entri baru (boleh dengan tanggal berlaku yang sama; entri yang terbit paling akhir yang dipakai).
+- Lebar label sumbu harga pada grafik diperkirakan dari jumlah karakter, bukan diukur dari font, jadi ruangnya sengaja dilebihkan.
