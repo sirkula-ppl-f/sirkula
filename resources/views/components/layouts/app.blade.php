@@ -11,6 +11,7 @@
         $links[] = ['label' => 'Beranda', 'route' => 'dashboard'];
         $links[] = ['label' => 'Keranjang', 'route' => 'cart.index'];
         $links[] = ['label' => 'Profil', 'route' => 'profil.edit', 'active' => 'profil.*', 'dusk' => 'nav-profil'];
+        $links[] = ['label' => __('reference-prices.nav.public'), 'route' => 'reference-prices.index', 'active' => 'reference-prices.*', 'dusk' => 'nav-reference-prices'];
 
         if ($user->isAdmin()) {
             $links[] = ['label' => 'Admin', 'route' => 'admin.dashboard'];
@@ -98,6 +99,20 @@
                                     @if (request()->routeIs('catalog.*')) aria-current="page" @endif
                                 >
                                     Katalog
+                                </a>
+                            </li>
+                            <li>
+                                <a
+                                    href="{{ route('reference-prices.index') }}"
+                                    @class([
+                                        'block rounded-md px-2 py-2 md:px-1 md:py-0.5',
+                                        'bg-brand-50 text-brand-700 md:bg-transparent md:underline md:underline-offset-4' => request()->routeIs('reference-prices.*'),
+                                        'text-gray-700 hover:bg-gray-50 hover:text-brand-700 md:hover:bg-transparent' => ! request()->routeIs('reference-prices.*'),
+                                    ])
+                                    @if (request()->routeIs('reference-prices.*')) aria-current="page" @endif
+                                    dusk="nav-reference-prices"
+                                >
+                                    {{ __('reference-prices.nav.public') }}
                                 </a>
                             </li>
                         @endauth
