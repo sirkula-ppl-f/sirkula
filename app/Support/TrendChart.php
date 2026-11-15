@@ -17,8 +17,8 @@ use InvalidArgumentException;
  *   rentang sumbu dibuat simetris sehingga garis datar tepat di tengah, tanpa pembagian nol.
  *
  * Ukuran: viewBox WIDTH × HEIGHT dengan teks FONT_SIZE. SVG ditampilkan selebar wadahnya, jadi teks
- * ikut diskalakan: di layar 360px grafik selebar ±296px (teks ±10,4px), dan lebar maksimum 480px
- * di desktop (teks ±16,9px). Kelas ini tidak memuat teks terjemahan maupun kelas CSS.
+ * ikut diskalakan: di layar 360px grafik selebar ±296px (teks ±10,4px), dan lebar maksimum 26rem
+ * (416px) di desktop (teks ±14,7px, setara teks halaman). Kelas ini tidak memuat teks terjemahan maupun kelas CSS.
  */
 final class TrendChart
 {

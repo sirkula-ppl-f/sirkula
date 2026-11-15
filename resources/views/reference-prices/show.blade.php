@@ -17,10 +17,11 @@
         <p class="max-w-3xl" dusk="reference-price-informative">{{ __('reference-prices.public.informative') }}</p>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-start">
+    {{-- grid-cols-1 dan min-w-0: teks panjang tanpa spasi (misalnya URL sumber) dipatahkan, tidak melebarkan halaman. --}}
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-start">
         <section
             aria-labelledby="latest-price-title"
-            class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200 sm:p-6"
+            class="min-w-0 rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200 sm:p-6"
             dusk="reference-price-latest"
         >
             <h2 id="latest-price-title" class="text-base font-semibold text-gray-900">{{ __('reference-prices.public.latest.title') }}</h2>

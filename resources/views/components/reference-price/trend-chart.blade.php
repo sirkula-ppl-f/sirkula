@@ -31,10 +31,10 @@
 @endphp
 
 {{--
-    SVG dari server tanpa JS. Lebar mengikuti wadah (maksimal 30rem), teks ikut diskalakan; ukuran viewBox
+    SVG dari server tanpa JS. Lebar mengikuti wadah (maksimal 26rem), teks ikut diskalakan; ukuran viewBox
     dan font dijelaskan di App\Support\TrendChart. Tren dibaca dari garis, titik, dan label, bukan warna saja.
 --}}
-<figure {{ $attributes->class(['w-full max-w-[30rem]']) }}>
+<figure {{ $attributes->class(['w-full max-w-104']) }}>
     <svg
         viewBox="0 0 {{ TrendChart::WIDTH }} {{ TrendChart::HEIGHT }}"
         class="block h-auto w-full"
