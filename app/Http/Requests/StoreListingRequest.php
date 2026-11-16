@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\ItemCondition;
 use App\Enums\ListingType;
 use App\Models\Category;
 use Closure;
@@ -26,42 +25,42 @@ class StoreListingRequest extends FormRequest
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
-{
-    return [
-        'tipe' => ['required', Rule::in([ListingType::Preloved->value])],
-        'kondisi' => ['required', Rule::in(['Seperti Baru', 'Baik', 'Cukup', 'Kurang'])],
-        'stok' => 'required|integer|min:1',
+    {
+        return [
+            'tipe' => ['required', Rule::in([ListingType::Preloved->value])],
+            'kondisi' => ['required', Rule::in(['Seperti Baru', 'Baik', 'Cukup', 'Kurang'])],
+            'stok' => 'required|integer|min:1',
 
-        'judul' => 'required|string|max:255',
-        'kategori_id' => [
-            'required',
-            Rule::exists('categories', 'id')->where('is_active', true),
-            function (string $attribute, mixed $value, Closure $fail): void {
+            'judul' => 'required|string|max:255',
+            'kategori_id' => [
+                'required',
+                Rule::exists('categories', 'id')->where('is_active', true),
+                function (string $attribute, mixed $value, Closure $fail): void {
 
-            $berlaku = Category::query()
-                ->forListingType(ListingType::Preloved)
-                ->whereKey($value)
-                ->exists();
+                    $berlaku = Category::query()
+                        ->forListingType(ListingType::Preloved)
+                        ->whereKey($value)
+                        ->exists();
 
-            if (! $berlaku) {
-                $fail('Kategori tidak berlaku untuk barang bekas.');
-            }
-},
-        ],
-        'harga' => ['required', 'integer', 'min:0'],
-        'wilayah_id' => 'required|exists:regions,id',
-        'hub_id' => [
-            'required',
-            Rule::exists('hubs', 'id')
-                ->where('region_id', $this->wilayah_id)
-                ->where('status', 'ACTIVE'),
-        ],
-        'deskripsi' => 'required|string',
+                    if (! $berlaku) {
+                        $fail('Kategori tidak berlaku untuk barang bekas.');
+                    }
+                },
+            ],
+            'harga' => ['required', 'integer', 'min:0'],
+            'wilayah_id' => 'required|exists:regions,id',
+            'hub_id' => [
+                            'required',
+                            Rule::exists('hubs', 'id')
+                                ->where('region_id', $this->wilayah_id)
+                                ->where('status', 'ACTIVE'),
+                        ],
+            'deskripsi' => 'required|string',
 
-        'fotos' => 'required|array|min:1|max:5',
-        'fotos.*' => 'image|mimes:jpeg,png,jpg|max:2048',
-    ];
-}
+            'fotos' => 'required|array|min:1|max:5',
+            'fotos.*' => 'image|mimes:jpeg,png,jpg|max:2048',
+        ];
+    }
 
     /**
      * Kustomisasi pesan error (opsional tapi disarankan)

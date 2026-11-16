@@ -2,7 +2,7 @@
     <div class="min-h-screen bg-[#F9FAFB] py-8">
         <div class="max-w-6xl mx-auto px-4">
             <!-- Link Kembali -->
-            <a href="{{ route('listings.index') }}" class="text-[#059669] font-medium mb-4 inline-flex items-center hover:underline">
+            <a href="{{ route('dashboard') }}" class="text-[#059669] font-medium mb-4 inline-flex items-center hover:underline">
                 &larr; Kembali ke Listing Saya
             </a>
 

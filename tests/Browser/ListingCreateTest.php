@@ -55,10 +55,10 @@ class ListingCreateTest extends DuskTestCase
                 ->select('#hub_id', (string) $hub->id)
                 ->type('#deskripsi', 'Masih mulus, ada lecet kecil di rangka.')
                 ->script("document.getElementById('fotos').classList.remove('hidden')");
-                $browser->attach('#fotos', $foto)
-                    ->press('Ajukan ke Hub')
-                    ->waitForText('menunggu verifikasi Hub')
-                    ->assertSee('Listing berhasil dibuat');
+            $browser->attach('#fotos', $foto)
+                ->press('Ajukan ke Hub')
+                ->waitForText('menunggu verifikasi Hub')
+                ->assertSee('Listing berhasil dibuat');
         });
 
         $this->assertDatabaseHas('listings', [
