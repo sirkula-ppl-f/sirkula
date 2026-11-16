@@ -6,24 +6,16 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-
         Schema::table('listings', function (Blueprint $table) {
-            $table->string('item_condition');
-            $table->text('description');
-            $table->foreignId('hub_id')->constrained('hubs')->restrictOnDelete();
-            $table->foreignId('region_id')->constrained('regions');
+            $table->string('item_condition')->nullable();
+            $table->text('description')->nullable();
+            $table->foreignId('hub_id')->nullable()->constrained('hubs')->restrictOnDelete();
+            $table->foreignId('region_id')->nullable()->constrained('regions')->restrictOnDelete();
         });
-
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('listings', function (Blueprint $table) {
@@ -31,6 +23,5 @@ return new class extends Migration
             $table->dropForeign(['region_id']);
             $table->dropColumn(['item_condition', 'description', 'hub_id', 'region_id']);
         });
-
     }
 };
