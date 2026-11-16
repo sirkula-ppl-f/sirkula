@@ -4,5 +4,9 @@
             Selamat datang, <span class="font-semibold" dusk="dashboard-user-name">{{ auth()->user()->name }}</span>.
         </p>
         <p class="mt-2 text-sm text-gray-600">Halaman ini masih placeholder. Fitur warga akan ditambahkan di PBI berikutnya.</p>
+        
+        <div class="mt-6">
+            <x-guide-tip placement="dashboard" />
+        </div>
     </div>
 </x-layouts.app>

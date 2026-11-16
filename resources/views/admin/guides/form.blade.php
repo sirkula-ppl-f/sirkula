@@ -46,6 +46,7 @@
                         @foreach (\App\Models\Guide::PLACEMENTS as $value)
                             <label class="flex items-center gap-2 text-sm text-gray-900">
                                 <input type="checkbox" name="placements[]" value="{{ $value }}"
+                                       dusk="placement-{{ $value }}"
                                        class="rounded border-gray-300 text-brand-600 focus:ring-brand-600"
                                        @checked(in_array($value, $selected))>
                                 {{ __('guides.placements.'.$value) }}
