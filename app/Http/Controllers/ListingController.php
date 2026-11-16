@@ -7,9 +7,9 @@ use App\Models\Category;
 use App\Models\Hub;
 use App\Models\Listing;
 use App\Models\Region;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-// Namespace khusus Intervention Image V4
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\Format;
 use Intervention\Image\ImageManager;
@@ -18,34 +18,35 @@ class ListingController extends Controller
 {
     public function create()
     {
+        // TODO: ganti ke hub dengan keanggotaan APPROVED setelah PBI-02 merge
+       $hubs = Hub::all();
         $categories = Category::all();
-        $hubs = Hub::all();
-        $regions = Region::all();
+        $regions = \App\Models\Region::all();
 
-        return view('listings.create', compact('categories', 'hubs', 'regions'));
+        return view('listings.create', compact('hubs', 'categories', 'regions'));
     }
 
     public function store(StoreListingRequest $request)
     {
+        $hub = Hub::findOrFail($request->hub_id);
+
         $statusListing = $request->action === 'draft' ? 'DRAFT' : 'PENDING_REVIEW';
 
         $listing = Listing::create([
-            'user_id' => auth()->id(),
+            'user_id' => Auth::id(),
             'listing_type' => $request->tipe,
             'title' => $request->judul,
             'category_id' => $request->kategori_id,
-            'condition' => $request->kondisi,
+            'item_condition' => $request->kondisi,
             'price' => $request->harga,
             'stock' => $request->stok,
             'hub_id' => $request->hub_id,
-            'region_id' => $request->wilayah_id,
+            'region_id' => $hub->region_id,
             'description' => $request->deskripsi,
-            'status' => $statusListing,
+            'review_status' => $statusListing,
         ]);
 
         if ($request->hasFile('fotos')) {
-
-            // Instansiasi ImageManager menggunakan Driver versi 4
             $manager = ImageManager::usingDriver(Driver::class);
 
             foreach ($request->file('fotos') as $index => $file) {

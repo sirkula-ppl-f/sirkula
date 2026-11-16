@@ -16,10 +16,10 @@
 
             <form action="{{ route('listings.store') }}" method="POST" enctype="multipart/form-data" class="flex flex-col lg:flex-row gap-6">
                 @csrf
-                
+
                 <!-- KARTU KIRI: FORM UTAMA -->
                 <div class="flex-1 bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-                    
+
                     <!-- Tipe Listing -->
                     <div class="mb-6">
                         <label class="block text-sm font-bold text-gray-800 mb-3">Tipe listing</label>
@@ -48,7 +48,7 @@
                     <!-- Judul Listing -->
                     <div class="mb-6">
                         <label for="judul" class="block text-sm font-bold text-gray-800 mb-2">Judul listing</label>
-                        <input type="text" name="judul" id="judul" value="{{ old('judul') }}" placeholder="Sepeda Lipat Bekas" 
+                        <input type="text" name="judul" id="judul" value="{{ old('judul') }}" placeholder="Sepeda Lipat Bekas"
                                class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#059669] focus:ring-[#059669] px-4 py-2.5">
                         @error('judul') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                     </div>
@@ -107,7 +107,8 @@
                             <select name="hub_id" id="hub_id" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#059669] focus:ring-[#059669] px-4 py-2.5">
                                 <option value="">Pilih Hub</option>
                                 @foreach($hubs as $hub)
-                                    <option value="{{ $hub->id }}" {{ old('hub_id') == $hub->id ? 'selected' : '' }}>
+                                    <!-- Sisipkan data-region di sini -->
+                                    <option value="{{ $hub->id }}" data-region="{{ $hub->region_id }}" {{ old('hub_id') == $hub->id ? 'selected' : '' }}>
                                         {{ $hub->nama }}
                                     </option>
                                 @endforeach
@@ -115,18 +116,18 @@
                             @error('hub_id') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
 
-                        <!-- Wilayah -->
+                        <!-- Wilayah (Otomatis & Terkunci) -->
                         <div>
                             <label for="wilayah_id" class="block text-sm font-bold text-gray-800 mb-2">Wilayah</label>
-                            <select name="wilayah_id" id="wilayah_id" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#059669] focus:ring-[#059669] px-4 py-2.5">
+                            <!-- Tambahkan bg-gray-100 dan disabled -->
+                            <select name="wilayah_id" id="wilayah_id" disabled class="w-full bg-gray-100 text-gray-500 rounded-lg border-gray-300 shadow-sm px-4 py-2.5 cursor-not-allowed">
                                 <option value="">Pilih Wilayah</option>
                                 @foreach($regions as $region)
-                                    <option value="{{ $region->id }}" {{ old('wilayah_id') == $region->id ? 'selected' : '' }}>
+                                    <option value="{{ $region->id }}">
                                         {{ $region->name }}
                                     </option>
                                 @endforeach
                             </select>
-                            @error('wilayah_id') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
                     </div>
 
@@ -141,7 +142,7 @@
                     <!-- UPLOAD FOTO (UI SESUAI MOCKUP) -->
                     <div class="mb-2">
                         <label class="block text-sm font-bold text-gray-800 mb-3">Foto (<span id="foto-count">0</span> dari 5)</label>
-                        
+
                         <!-- Container Kotak Foto -->
                         <div class="flex flex-wrap gap-4" id="foto-preview-container">
                             <!-- Tombol + Foto -->
@@ -150,10 +151,10 @@
                             </button>
                         </div>
                         <p class="text-xs text-gray-500 mt-3">JPEG/PNG, maks 2 MB. Metadata lokasi dihapus otomatis.</p>
-                        
+
                         <!-- Input File Asli (Disembunyikan) -->
                         <input type="file" id="fotos" name="fotos[]" multiple accept="image/jpeg, image/png" class="hidden">
-                        
+
                         @error('fotos') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                         @error('fotos.*') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                     </div>
@@ -176,7 +177,7 @@
                         <button type="submit" name="action" value="submit" class="w-full py-2.5 bg-[#059669] text-white font-semibold rounded-lg hover:bg-[#047857] transition shadow-sm">
                             Ajukan ke Hub
                         </button>
-                        
+
                         <!-- Tombol Draf (Ubah type jadi submit, beri name dan value) -->
                         <button type="submit" name="action" value="draft" class="w-full py-2.5 bg-white text-gray-800 font-semibold rounded-lg border border-gray-300 hover:bg-gray-50 transition shadow-sm">
                             Simpan sebagai Draf
@@ -188,47 +189,62 @@
         </div>
     </div>
 
-    <!-- SCRIPT UNTUK INTERAKSI UPLOAD FOTO -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+
+            //  SCRIPT UPLOAD FOTO
             const fileInput = document.getElementById('fotos');
             const container = document.getElementById('foto-preview-container');
             const btnAdd = document.getElementById('btn-add-foto');
             const countText = document.getElementById('foto-count');
 
-            // Klik tombol "+ Foto" akan memicu klik pada input file yang tersembunyi
             btnAdd.addEventListener('click', () => {
                 fileInput.click();
             });
 
             fileInput.addEventListener('change', function() {
-                // Maksimal 5 file sesuai requirement
-                const files = Array.from(this.files).slice(0, 5); 
-                
-                // Hapus preview kotak foto sebelumnya (kecuali tombol +)
+                const files = Array.from(this.files).slice(0, 5);
                 container.querySelectorAll('.foto-box').forEach(box => box.remove());
 
-                // Render ulang kotak sesuai jumlah file
                 files.forEach((file, index) => {
                     const box = document.createElement('div');
-                    // Style UI biru muda keabuan seperti di mockup
                     box.className = 'foto-box w-24 h-24 bg-[#eef2f6] rounded-lg flex items-center justify-center text-[#64748b] text-sm font-medium';
                     box.textContent = `Foto ${index + 1}`;
-                    
-                    // Sisipkan sebelum tombol tambah
                     container.insertBefore(box, btnAdd);
                 });
 
-                // Update teks counter (X dari 5)
                 countText.textContent = files.length;
-                
-                // Sembunyikan tombol + jika sudah mencapai 5 foto
                 if(files.length >= 5) {
                     btnAdd.style.display = 'none';
                 } else {
                     btnAdd.style.display = 'flex';
                 }
             });
+
+            // OTOMATISASI WILAYAH
+            // --- 2. SCRIPT OTOMATISASI WILAYAH ---
+            const hubSelect = document.getElementById('hub_id');
+            const wilayahSelect = document.getElementById('wilayah_id');
+
+            if (hubSelect && wilayahSelect) {
+                // Buat fungsi terpisah agar bisa dipanggil berkali-kali
+                const updateWilayah = function() {
+                    const selectedOption = hubSelect.options[hubSelect.selectedIndex];
+                    // Tambahkan pengecekan if(selectedOption) agar tidak error
+                    if(selectedOption) {
+                        const regionId = selectedOption.getAttribute('data-region');
+                        wilayahSelect.value = regionId ? regionId : '';
+                    }
+                };
+
+                // 1. Jalankan saat user mengganti pilihan Hub
+                hubSelect.addEventListener('change', updateWilayah);
+
+                // 2. Jalankan saat halaman pertama kali dimuat
+                // (Berguna jika ada old value dari Laravel setelah form error)
+                updateWilayah();
+            }
+
         });
     </script>
 </x-layouts.app>
