@@ -3,22 +3,18 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Guide extends Model
 {
-    public const PLACEMENTS = [
-        'listing_form' => 'Form listing',
-        'detail_page' => 'Halaman detail',
-        'dashboard' => 'Dashboard',
-    ];
+    use HasFactory;
 
-    public const STATUSES = [
-        'draft' => 'Draf',
-        'published' => 'Terbit',
-        'archived' => 'Diarsipkan',
-    ];
+    // Daftar nilai yang valid. Label tampilannya ada di lang/id/guides.php.
+    public const PLACEMENTS = ['listing_form', 'detail_page', 'dashboard'];
+
+    public const STATUSES = ['draft', 'published', 'archived'];
 
     protected $fillable = ['title', 'slug', 'body', 'status', 'views_count', 'interactions_count'];
 
@@ -39,7 +35,7 @@ class Guide extends Model
 
     public function syncPlacements(array $placements): void
     {
-        $placements = array_values(array_intersect($placements, array_keys(self::PLACEMENTS)));
+        $placements = array_values(array_intersect($placements, self::PLACEMENTS));
 
         $this->placements()->whereNotIn('placement', $placements)->delete();
         foreach ($placements as $placement) {
@@ -49,7 +45,7 @@ class Guide extends Model
 
     public function getStatusLabelAttribute(): string
     {
-        return self::STATUSES[$this->status] ?? $this->status;
+        return __('guides.statuses.'.$this->status);
     }
 
     public function getPlacementKeysAttribute(): array
@@ -60,7 +56,7 @@ class Guide extends Model
     public function getPlacementLabelsAttribute(): array
     {
         return $this->placements
-            ->map(fn ($p) => self::PLACEMENTS[$p->placement] ?? $p->placement)
+            ->map(fn ($p) => __('guides.placements.'.$p->placement))
             ->all();
     }
 }

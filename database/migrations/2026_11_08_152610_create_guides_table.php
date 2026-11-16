@@ -13,8 +13,6 @@ return new class extends Migration
             $table->string('title');
             $table->string('slug')->unique();
             $table->text('body');
-            // listing_form | detail_page | dashboard
-            $table->string('placement')->default('listing_form')->index();
             // draft | published | archived
             $table->string('status')->default('draft')->index();
             // Hanya counter agregat, tanpa data pribadi
@@ -22,10 +20,19 @@ return new class extends Migration
             $table->unsignedInteger('interactions_count')->default(0);
             $table->timestamps();
         });
+
+        // listing_form | detail_page | dashboard
+        Schema::create('guide_placements', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('guide_id')->constrained()->cascadeOnDelete();
+            $table->string('placement')->index();
+            $table->unique(['guide_id', 'placement']);
+        });
     }
 
     public function down(): void
     {
+        Schema::dropIfExists('guide_placements');
         Schema::dropIfExists('guides');
     }
 };

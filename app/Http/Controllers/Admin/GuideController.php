@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\GuideRequest;
 use App\Models\Guide;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 class GuideController extends Controller
 {
@@ -22,18 +23,16 @@ class GuideController extends Controller
         return view('admin.guides.form', ['guide' => new Guide]);
     }
 
-    public function store(Request $request)
+    public function store(GuideRequest $request)
     {
-        $data = $this->validated($request);
-        $placements = $data['placements'];
-        unset($data['placements']);
-
-        $data['slug'] = str($data['title'])->slug().'-'.substr(uniqid(), -5);
+        $data = $request->validated();
+        $placements = Arr::pull($data, 'placements');
+        $data['slug'] = Str::slug($data['title']).'-'.Str::lower(Str::random(5));
 
         $guide = Guide::create($data);
         $guide->syncPlacements($placements);
 
-        return redirect()->route('admin.guides.index')->with('success', 'Panduan dibuat.');
+        return redirect()->route('admin.guides.index')->with('status', __('guides.flash.created'));
     }
 
     public function edit(Guide $guide)
@@ -43,26 +42,14 @@ class GuideController extends Controller
         return view('admin.guides.form', compact('guide'));
     }
 
-    public function update(Request $request, Guide $guide)
+    public function update(GuideRequest $request, Guide $guide)
     {
-        $data = $this->validated($request);
-        $placements = $data['placements'];
-        unset($data['placements']);
+        $data = $request->validated();
+        $placements = Arr::pull($data, 'placements');
 
         $guide->update($data);
         $guide->syncPlacements($placements);
 
-        return redirect()->route('admin.guides.index')->with('success', 'Panduan diperbarui.');
-    }
-
-    private function validated(Request $request): array
-    {
-        return $request->validate([
-            'title' => ['required', 'string', 'max:120'],
-            'body' => ['required', 'string', 'max:500'],
-            'status' => ['required', Rule::in(array_keys(Guide::STATUSES))],
-            'placements' => ['required', 'array', 'min:1'],
-            'placements.*' => [Rule::in(array_keys(Guide::PLACEMENTS))],
-        ]);
+        return redirect()->route('admin.guides.index')->with('status', __('guides.flash.updated'));
     }
 }
