@@ -50,11 +50,11 @@ class StoreListingRequest extends FormRequest
             'harga' => ['required', 'integer', 'min:0'],
             'wilayah_id' => 'required|exists:regions,id',
             'hub_id' => [
-                            'required',
-                            Rule::exists('hubs', 'id')
-                                ->where('region_id', $this->wilayah_id)
-                                ->where('status', 'ACTIVE'),
-                        ],
+                'required',
+                Rule::exists('hubs', 'id')
+                    ->where('region_id', $this->wilayah_id)
+                    ->where('status', 'ACTIVE'),
+            ],
             'deskripsi' => 'required|string',
 
             'fotos' => 'required|array|min:1|max:5',
