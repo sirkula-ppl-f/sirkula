@@ -2,7 +2,7 @@
     <div class="min-h-screen bg-[#F9FAFB] py-8">
         <div class="max-w-6xl mx-auto px-4">
             <!-- Link Kembali -->
-            <a href="#" class="text-[#059669] font-medium mb-4 inline-flex items-center hover:underline">
+            <a href="{{ route('listings.index') }}" class="text-[#059669] font-medium mb-4 inline-flex items-center hover:underline">
                 &larr; Kembali ke Listing Saya
             </a>
 
@@ -28,18 +28,6 @@
                                 <input type="radio" name="tipe" value="PRELOVED" class="peer sr-only" checked>
                                 <div class="px-5 py-2 rounded-full border border-gray-300 text-gray-700 peer-checked:border-[#059669] peer-checked:bg-[#059669] peer-checked:text-white font-medium text-sm transition-colors">
                                     Barang Bekas
-                                </div>
-                            </label>
-                            <label class="cursor-pointer">
-                                <input type="radio" name="tipe" value="RECYCLABLE" class="peer sr-only">
-                                <div class="px-5 py-2 rounded-full border border-gray-300 text-gray-700 peer-checked:border-[#059669] peer-checked:bg-[#059669] peer-checked:text-white font-medium text-sm transition-colors">
-                                    Material Daur Ulang
-                                </div>
-                            </label>
-                            <label class="cursor-pointer">
-                                <input type="radio" name="tipe" value="UPCYCLE" class="peer sr-only">
-                                <div class="px-5 py-2 rounded-full border border-gray-300 text-gray-700 peer-checked:border-[#059669] peer-checked:bg-[#059669] peer-checked:text-white font-medium text-sm transition-colors">
-                                    Produk Upcycle
                                 </div>
                             </label>
                         </div>
@@ -73,10 +61,9 @@
                             <label for="kondisi" class="block text-sm font-bold text-gray-800 mb-2">Kondisi</label>
                             <select name="kondisi" id="kondisi" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#059669] focus:ring-[#059669] px-4 py-2.5">
                                 <option value="">Pilih Kondisi</option>
-                                <option value="Seperti Baru" {{ old('kondisi') == 'Seperti Baru' ? 'selected' : '' }}>Seperti Baru</option>
-                                <option value="Baik" {{ old('kondisi') == 'Baik' ? 'selected' : '' }}>Baik</option>
-                                <option value="Cukup" {{ old('kondisi') == 'Cukup' ? 'selected' : '' }}>Cukup</option>
-                                <option value="Kurang" {{ old('kondisi') == 'Kurang' ? 'selected' : '' }}>Kurang</option>
+                                @foreach($conditions as $kondisi)
+                                    <option value="{{ $kondisi->value }}" {{ old('kondisi') === $kondisi->value ? 'selected' : '' }}>{{ $kondisi->label() }}</option>
+                                @endforeach
                             </select>
                             @error('kondisi') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
@@ -85,9 +72,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <!-- Harga -->
                         <div>
-                            <label for="harga" class="block text-sm font-bold text-gray-800 mb-2">Harga (Rp)</label>
-                            <input type="number" name="harga" id="harga" value="{{ old('harga') }}" min="0" placeholder="850000"
-                                   class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#059669] focus:ring-[#059669] px-4 py-2.5">
+                            <label for="harga_tampil" class="block text-sm font-bold text-gray-800 mb-2">Harga (Rp)</label>
+                            <input type="text" inputmode="numeric" id="harga_tampil" autocomplete="off" placeholder="850.000"
+                                value="{{ old('harga') !== null ? number_format((int) old('harga'), 0, ',', '.') : '' }}"
+                                class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#059669] focus:ring-[#059669] px-4 py-2.5">
+                            <input type="hidden" name="harga" id="harga" value="{{ old('harga') }}">
                             @error('harga') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
 
@@ -292,6 +281,22 @@
 
             wilayahSelect.addEventListener('change', renderHubs);
             renderHubs(); // jalan sekali saat halaman dibuka (menangani old() setelah validasi gagal)
+
+            const hargaTampil = document.getElementById('harga_tampil');
+            const hargaAsli = document.getElementById('harga');
+
+            // =====================================================
+            // 2. FILTER HARGA
+            // =====================================================
+
+
+            if (hargaTampil && hargaAsli) {
+                hargaTampil.addEventListener('input', () => {
+                    const angka = hargaTampil.value.replace(/\D/g, '');
+                    hargaAsli.value = angka;
+                    hargaTampil.value = angka ? Number(angka).toLocaleString('id-ID') : '';
+                });
+            }
         });
     </script>
 </x-layouts.app>

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ItemCondition;
+use App\Enums\ListingType;
 use App\Http\Requests\StoreListingRequest;
 use App\Models\Category;
 use App\Models\Hub;
@@ -24,10 +26,15 @@ class ListingController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'region_id']);
 
-        $categories = Category::all();
+        $categories = Category::query()
+            ->active()
+            ->forListingType(ListingType::Preloved)
+            ->orderBy('name')
+            ->get();
         $regions = Region::orderBy('name')->get();
+        $conditions = ItemCondition::cases();
 
-        return view('listings.create', compact('hubs', 'categories', 'regions'));
+        return view('listings.create', compact('hubs', 'categories', 'regions', 'conditions'));
     }
 
     public function store(StoreListingRequest $request)
