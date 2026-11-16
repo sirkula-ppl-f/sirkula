@@ -61,7 +61,7 @@
     <nav class="navlinks">
         <a class="active" href="{{ route('catalog.index') }}">Katalog</a>
         <a href="#">Hub Komunitas</a>
-        <a href="#">Harga Acuan</a>
+        <a href="{{ route('reference-prices.index') }}">Harga Acuan</a>
         <a href="#">Panduan</a>
     </nav>
 
