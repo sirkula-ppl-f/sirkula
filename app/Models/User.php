@@ -24,6 +24,15 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
+     * Penugasan pengguna sebagai pengelola Hub.
+     * Digunakan oleh PBI-01 dan SP-26.
+     */
+    public function hubAssignments(): HasMany
+    {
+        return $this->hasMany(HubManager::class);
+    }
+
+    /**
      * Nilai default model, disamakan dengan default kolom di database.
      *
      * @var array<string, mixed>
