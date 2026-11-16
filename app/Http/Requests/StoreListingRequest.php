@@ -32,8 +32,8 @@ class StoreListingRequest extends FormRequest
             'judul' => 'required|string|max:255',
             'kategori_id' => 'required|exists:categories,id',
             'harga' => 'required|numeric|min:0',
-            'hub_id' => 'required|exists:hubs,id',
             'wilayah_id' => 'required|exists:regions,id',
+            'hub_id' => 'required|exists:hubs,id',
             'deskripsi' => 'required|string',
 
             // Aturan untuk array foto

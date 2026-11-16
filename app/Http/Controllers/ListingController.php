@@ -8,6 +8,7 @@ use App\Models\Hub;
 use App\Models\Listing;
 use App\Models\Region;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\Drivers\Gd\Driver;
@@ -19,52 +20,52 @@ class ListingController extends Controller
     public function create()
     {
         // TODO: ganti ke hub dengan keanggotaan APPROVED setelah PBI-02 merge
-       $hubs = Hub::all();
+        $hubs = Hub::active()
+            ->orderBy('name')
+            ->get(['id', 'name', 'region_id']);
+
         $categories = Category::all();
-        $regions = \App\Models\Region::all();
+        $regions = Region::orderBy('name')->get();
 
         return view('listings.create', compact('hubs', 'categories', 'regions'));
     }
 
     public function store(StoreListingRequest $request)
     {
-        $hub = Hub::findOrFail($request->hub_id);
-
         $statusListing = $request->action === 'draft' ? 'DRAFT' : 'PENDING_REVIEW';
 
-        $listing = Listing::create([
-            'user_id' => Auth::id(),
-            'listing_type' => $request->tipe,
-            'title' => $request->judul,
-            'category_id' => $request->kategori_id,
-            'item_condition' => $request->kondisi,
-            'price' => $request->harga,
-            'stock' => $request->stok,
-            'hub_id' => $request->hub_id,
-            'region_id' => $hub->region_id,
-            'description' => $request->deskripsi,
-            'review_status' => $statusListing,
-        ]);
+        DB::transaction(function () use ($request, $statusListing) {
+            $listing = Listing::create([
+                'user_id' => Auth::id(),
+                'listing_type' => $request->tipe,
+                'title' => $request->judul,
+                'category_id' => $request->kategori_id,
+                'item_condition' => $request->kondisi,
+                'price' => $request->harga,
+                'stock' => $request->stok,
+                'hub_id' => $request->hub_id,
+                'region_id' => $request->wilayah_id,
+                'description' => $request->deskripsi,
+                'review_status' => $statusListing,
+            ]);
 
-        if ($request->hasFile('fotos')) {
             $manager = ImageManager::usingDriver(Driver::class);
 
-            foreach ($request->file('fotos') as $index => $file) {
-                $filename = Str::random(40).'.jpg';
-                $path = 'listings/'.$filename;
+            foreach ($request->file('fotos', []) as $index => $file) {
+                $path = 'listings/'.Str::random(40).'.jpg';
 
-                $image = $manager->decode($file);
-
-                $encoded = $image->encodeUsingFormat(Format::JPEG, quality: 90);
+                // Re-encode: metadata lokasi (EXIF) ikut terhapus
+                $encoded = $manager->decode($file)
+                    ->encodeUsingFormat(Format::JPEG, quality: 90);
 
                 Storage::disk('public')->put($path, (string) $encoded);
 
                 $listing->images()->create([
                     'path_foto' => $path,
-                    'is_primary' => $index === 0 ? true : false,
+                    'is_primary' => $index === 0,
                 ]);
             }
-        }
+        });
 
         $pesanSukses = $statusListing === 'DRAFT'
             ? 'Listing berhasil disimpan sebagai draf.'

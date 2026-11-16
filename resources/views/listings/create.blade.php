@@ -25,9 +25,9 @@
                         <label class="block text-sm font-bold text-gray-800 mb-3">Tipe listing</label>
                         <div class="flex flex-wrap gap-3">
                             <label class="cursor-pointer">
-                                 <input type="radio" name="tipe" value="PRELOVED" class="peer sr-only" checked>
-                                 <div class="px-5 py-2 rounded-full border border-gray-300 text-gray-700 peer-checked:border-[#059669] peer-checked:bg-[#059669] peer-checked:text-white font-medium text-sm transition-colors">
-                                     Barang Bekas
+                                <input type="radio" name="tipe" value="PRELOVED" class="peer sr-only" checked>
+                                <div class="px-5 py-2 rounded-full border border-gray-300 text-gray-700 peer-checked:border-[#059669] peer-checked:bg-[#059669] peer-checked:text-white font-medium text-sm transition-colors">
+                                    Barang Bekas
                                 </div>
                             </label>
                             <label class="cursor-pointer">
@@ -36,7 +36,7 @@
                                     Material Daur Ulang
                                 </div>
                             </label>
-                           <label class="cursor-pointer">
+                            <label class="cursor-pointer">
                                 <input type="radio" name="tipe" value="UPCYCLE" class="peer sr-only">
                                 <div class="px-5 py-2 rounded-full border border-gray-300 text-gray-700 peer-checked:border-[#059669] peer-checked:bg-[#059669] peer-checked:text-white font-medium text-sm transition-colors">
                                     Produk Upcycle
@@ -101,33 +101,27 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <!-- Hub -->
-                        <div>
-                            <label for="hub_id" class="block text-sm font-bold text-gray-800 mb-2">Hub</label>
-                            <select name="hub_id" id="hub_id" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#059669] focus:ring-[#059669] px-4 py-2.5">
-                                <option value="">Pilih Hub</option>
-                                @foreach($hubs as $hub)
-                                    <!-- Sisipkan data-region di sini -->
-                                    <option value="{{ $hub->id }}" data-region="{{ $hub->region_id }}" {{ old('hub_id') == $hub->id ? 'selected' : '' }}>
-                                        {{ $hub->nama }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('hub_id') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
-                        </div>
-
-                        <!-- Wilayah (Otomatis & Terkunci) -->
+                        <!-- Wilayah (Di Kiri) -->
                         <div>
                             <label for="wilayah_id" class="block text-sm font-bold text-gray-800 mb-2">Wilayah</label>
-                            <!-- Tambahkan bg-gray-100 dan disabled -->
-                            <select name="wilayah_id" id="wilayah_id" disabled class="w-full bg-gray-100 text-gray-500 rounded-lg border-gray-300 shadow-sm px-4 py-2.5 cursor-not-allowed">
+                            <select name="wilayah_id" id="wilayah_id" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#059669] focus:ring-[#059669] px-4 py-2.5">
                                 <option value="">Pilih Wilayah</option>
                                 @foreach($regions as $region)
-                                    <option value="{{ $region->id }}">
+                                    <option value="{{ $region->id }}" {{ old('wilayah_id') == $region->id ? 'selected' : '' }}>
                                         {{ $region->name }}
                                     </option>
                                 @endforeach
                             </select>
+                            @error('wilayah_id') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+
+                        <!-- Hub (Di Kanan) - opsinya diisi oleh JavaScript sesuai wilayah -->
+                        <div>
+                            <label for="hub_id" class="block text-sm font-bold text-gray-800 mb-2">Hub</label>
+                            <select name="hub_id" id="hub_id" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#059669] focus:ring-[#059669] px-4 py-2.5 disabled:bg-gray-100 disabled:text-gray-500">
+                                <option value="">Pilih wilayah dulu</option>
+                            </select>
+                            @error('hub_id') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
                     </div>
 
@@ -139,7 +133,7 @@
                         @error('deskripsi') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
-                    <!-- UPLOAD FOTO (UI SESUAI MOCKUP) -->
+                    <!-- UPLOAD FOTO -->
                     <div class="mb-2">
                         <label class="block text-sm font-bold text-gray-800 mb-3">Foto (<span id="foto-count">0</span> dari 5)</label>
 
@@ -153,7 +147,7 @@
                         <p class="text-xs text-gray-500 mt-3">JPEG/PNG, maks 2 MB. Metadata lokasi dihapus otomatis.</p>
 
                         <!-- Input File Asli (Disembunyikan) -->
-                        <input type="file" id="fotos" name="fotos[]" multiple accept="image/jpeg, image/png" class="hidden">
+                        <input type="file" id="fotos" name="fotos[]" multiple accept="image/jpeg,image/png" class="hidden">
 
                         @error('fotos') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                         @error('fotos.*') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
@@ -172,17 +166,15 @@
                         </div>
 
                         <!-- Tombol -->
-                    <div class="flex flex-col gap-3">
-                        <!-- Tombol Ajukan -->
-                        <button type="submit" name="action" value="submit" class="w-full py-2.5 bg-[#059669] text-white font-semibold rounded-lg hover:bg-[#047857] transition shadow-sm">
-                            Ajukan ke Hub
-                        </button>
+                        <div class="flex flex-col gap-3">
+                            <button type="submit" name="action" value="submit" class="w-full py-2.5 bg-[#059669] text-white font-semibold rounded-lg hover:bg-[#047857] transition shadow-sm">
+                                Ajukan ke Hub
+                            </button>
 
-                        <!-- Tombol Draf (Ubah type jadi submit, beri name dan value) -->
-                        <button type="submit" name="action" value="draft" class="w-full py-2.5 bg-white text-gray-800 font-semibold rounded-lg border border-gray-300 hover:bg-gray-50 transition shadow-sm">
-                            Simpan sebagai Draf
-                        </button>
-                    </div>
+                            <button type="submit" name="action" value="draft" class="w-full py-2.5 bg-white text-gray-800 font-semibold rounded-lg border border-gray-300 hover:bg-gray-50 transition shadow-sm">
+                                Simpan sebagai Draf
+                            </button>
+                        </div>
                     </div>
                 </div>
             </form>
@@ -190,61 +182,116 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
 
-            //  SCRIPT UPLOAD FOTO
+            // =====================================================
+            // 1. UPLOAD FOTO (akumulatif, maks 5)
+            // =====================================================
+            const MAX_FOTO = 5;
+            const MAX_SIZE = 2 * 1024 * 1024; // 2 MB
             const fileInput = document.getElementById('fotos');
             const container = document.getElementById('foto-preview-container');
             const btnAdd = document.getElementById('btn-add-foto');
             const countText = document.getElementById('foto-count');
+            let selected = [];
 
-            btnAdd.addEventListener('click', () => {
-                fileInput.click();
-            });
+            function syncInput() {
+                const dt = new DataTransfer();
+                selected.forEach(f => dt.items.add(f));
+                fileInput.files = dt.files;
+            }
 
-            fileInput.addEventListener('change', function() {
-                const files = Array.from(this.files).slice(0, 5);
-                container.querySelectorAll('.foto-box').forEach(box => box.remove());
+            function renderFotos() {
+                container.querySelectorAll('.foto-box').forEach(b => b.remove());
 
-                files.forEach((file, index) => {
+                selected.forEach((file, i) => {
                     const box = document.createElement('div');
-                    box.className = 'foto-box w-24 h-24 bg-[#eef2f6] rounded-lg flex items-center justify-center text-[#64748b] text-sm font-medium';
-                    box.textContent = `Foto ${index + 1}`;
+                    box.className = 'foto-box relative w-24 h-24 rounded-lg overflow-hidden border border-gray-200';
+
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    img.className = 'w-full h-full object-cover';
+
+                    const rm = document.createElement('button');
+                    rm.type = 'button';
+                    rm.textContent = '×';
+                    rm.setAttribute('aria-label', 'Hapus foto');
+                    rm.className = 'absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-xs leading-5 text-center';
+                    rm.addEventListener('click', () => {
+                        selected.splice(i, 1);
+                        syncInput();
+                        renderFotos();
+                    });
+
+                    box.append(img, rm);
                     container.insertBefore(box, btnAdd);
                 });
 
-                countText.textContent = files.length;
-                if(files.length >= 5) {
-                    btnAdd.style.display = 'none';
-                } else {
-                    btnAdd.style.display = 'flex';
-                }
-            });
-
-            // OTOMATISASI WILAYAH
-            // --- 2. SCRIPT OTOMATISASI WILAYAH ---
-            const hubSelect = document.getElementById('hub_id');
-            const wilayahSelect = document.getElementById('wilayah_id');
-
-            if (hubSelect && wilayahSelect) {
-                // Buat fungsi terpisah agar bisa dipanggil berkali-kali
-                const updateWilayah = function() {
-                    const selectedOption = hubSelect.options[hubSelect.selectedIndex];
-                    // Tambahkan pengecekan if(selectedOption) agar tidak error
-                    if(selectedOption) {
-                        const regionId = selectedOption.getAttribute('data-region');
-                        wilayahSelect.value = regionId ? regionId : '';
-                    }
-                };
-
-                // 1. Jalankan saat user mengganti pilihan Hub
-                hubSelect.addEventListener('change', updateWilayah);
-
-                // 2. Jalankan saat halaman pertama kali dimuat
-                // (Berguna jika ada old value dari Laravel setelah form error)
-                updateWilayah();
+                countText.textContent = selected.length;
+                btnAdd.style.display = selected.length >= MAX_FOTO ? 'none' : 'flex';
             }
 
+            btnAdd.addEventListener('click', () => fileInput.click());
+
+            fileInput.addEventListener('change', () => {
+                const errors = [];
+
+                Array.from(fileInput.files).forEach(file => {
+                    if (selected.length >= MAX_FOTO) return;
+                    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+                        errors.push(file.name + ': format harus JPEG/PNG');
+                        return;
+                    }
+                    if (file.size > MAX_SIZE) {
+                        errors.push(file.name + ': ukuran lebih dari 2 MB');
+                        return;
+                    }
+                    const duplikat = selected.some(f => f.name === file.name && f.size === file.size);
+                    if (!duplikat) selected.push(file);
+                });
+
+                syncInput();
+                renderFotos();
+
+                if (errors.length) alert(errors.join('\n'));
+            });
+
+            // =====================================================
+            // 2. FILTER HUB BERDASARKAN WILAYAH
+            // =====================================================
+            const allHubs = @json($hubs);
+            const oldHubId = @json((string) old('hub_id'));
+
+            const wilayahSelect = document.getElementById('wilayah_id');
+            const hubSelect = document.getElementById('hub_id');
+
+            function renderHubs() {
+                const regionId = wilayahSelect.value;
+                hubSelect.innerHTML = '';
+
+                if (!regionId) {
+                    hubSelect.add(new Option('Pilih hub', ''));
+                    hubSelect.disabled = true;
+                    return;
+                }
+
+                const filtered = allHubs.filter(h => String(h.region_id) === regionId);
+
+                if (filtered.length === 0) {
+                    hubSelect.add(new Option('Belum ada hub di wilayah ini', ''));
+                    hubSelect.disabled = true;
+                    return;
+                }
+
+                hubSelect.disabled = false;
+                hubSelect.add(new Option('Pilih Hub', ''));
+                filtered.forEach(h => {
+                    hubSelect.add(new Option(h.name, h.id, false, String(h.id) === oldHubId));
+                });
+            }
+
+            wilayahSelect.addEventListener('change', renderHubs);
+            renderHubs(); // jalan sekali saat halaman dibuka (menangani old() setelah validasi gagal)
         });
     </script>
 </x-layouts.app>
