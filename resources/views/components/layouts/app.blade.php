@@ -13,6 +13,7 @@
         $userLinks[] = ['label' => 'Beranda', 'route' => 'dashboard'];
         $userLinks[] = ['label' => 'Keranjang', 'route' => 'cart.index'];
         $userLinks[] = ['label' => 'Profil', 'route' => 'profil.edit', 'active' => 'profil.*', 'dusk' => 'nav-profil'];
+        $userLinks[] = ['label' => 'Aktivitas Sirkular', 'route' => 'circular-activity.index', 'active' => 'circular-activity.*', 'dusk' => 'nav-circular-activity'];
         $userLinks[] = ['label' => __('reference-prices.nav.public'), 'route' => 'reference-prices.index', 'active' => 'reference-prices.*', 'dusk' => 'nav-reference-prices'];
 
         if ($user->isAdmin()) {
