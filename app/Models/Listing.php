@@ -29,29 +29,29 @@ class Listing extends Model
     protected $guarded = [];
 
     /**
-+     * Relasi ke penjual.
-+     *
-+     * @return BelongsTo<User, $this>
-+     */
+     * Relasi ke penjual.
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function seller(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
     /**
-+     * Relasi ke kategori listing.
-+     *
-+     * @return BelongsTo<Category, $this>
-+     */
+     * Relasi ke kategori listing.
+     *
+     * @return BelongsTo<Category, $this>
+     */
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'category_id');
     }
 
     /**
-+     * Aturan listing yang boleh ditampilkan:
-+     * disetujui, aktif, stok tersedia, dan penjual aktif.
-+     */
+     * Aturan listing yang boleh ditampilkan:
+     * disetujui, aktif, stok tersedia, dan penjual aktif.
+     */
     public function scopePurchasable(Builder $query): void
     {
         $query->where('review_status', self::REVIEW_APPROVED)
