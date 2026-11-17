@@ -3,10 +3,12 @@
 namespace App\Services;
 
 use App\Enums\ListingType;
+use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -18,6 +20,10 @@ use Illuminate\Database\Eloquent\Builder;
 class CircularActivityService
 {
     public const TIMEZONE = 'Asia/Jakarta';
+
+    public const DEFAULT_MONTHS = 6;
+
+    public const ITEMS_PER_PAGE = 10;
 
     public const PERIOD_ALL = 'all';
 
@@ -186,10 +192,134 @@ class CircularActivityService
     }
 
     /**
-     * TODO (Langkah 2 - Bagian 2):
-     * Menambahkan method monthlySeries() untuk grafik aktivitas bulanan (6 bulan terakhir)
-     * dan paginateItems() untuk daftar riwayat item aktivitas sirkular.
+     * Deret grafik aktivitas bulanan dalam N bulan terakhir (urut lama ke baru, zona waktu WIB).
+     *
+     * Pengelompokan bulan dilakukan di PHP berdasarkan paid_at dalam WIB agar konsisten di MySQL
+     * maupun SQLite tanpa ketergantungan tabel timezone database.
+     *
+     * @return list<array{
+     *     month_key: string,
+     *     label: string,
+     *     orders_count: int,
+     *     quantity_total: int,
+     *     total_amount: int,
+     *     known_weight_kg: float|null,
+     *     items_with_weight_count: int,
+     *     items_without_weight_count: int,
+     *     height_percent: int
+     * }>
      */
+    public function monthlySeries(User $user, int $months = self::DEFAULT_MONTHS, ?string $role = null): array
+    {
+        $months = max(1, min(12, $months));
+        $role = $this->normalizeRole($role);
+
+        $currentMonthWib = CarbonImmutable::now(self::TIMEZONE)->startOfMonth();
+        $startMonthWib = $currentMonthWib->subMonths($months - 1);
+        $endMonthWib = $currentMonthWib->endOfMonth();
+
+        $buckets = [];
+        for ($i = 0; $i < $months; $i++) {
+            $month = $startMonthWib->addMonths($i);
+            $monthKey = $month->format('Y-m');
+
+            $buckets[$monthKey] = [
+                'month_key' => $monthKey,
+                'label' => $month->locale('id')->translatedFormat('M Y'),
+                'orders_count' => 0,
+                'quantity_total' => 0,
+                'total_amount' => 0,
+                'weight_sum' => 0.0,
+                'items_with_weight_count' => 0,
+                'items_without_weight_count' => 0,
+            ];
+        }
+
+        $orders = $this->basePaidOrdersQuery($user, self::PERIOD_ALL, $role)
+            ->whereBetween('paid_at', [$startMonthWib->utc(), $endMonthWib->utc()])
+            ->select(['id', 'buyer_id', 'seller_id', 'total', 'paid_at'])
+            ->with(['items:id,order_id,quantity,weight_per_unit_snapshot'])
+            ->get();
+
+        foreach ($orders as $order) {
+            if ($order->paid_at === null) {
+                continue;
+            }
+
+            $monthKey = CarbonImmutable::instance($order->paid_at)
+                ->setTimezone(self::TIMEZONE)
+                ->format('Y-m');
+
+            if (! array_key_exists($monthKey, $buckets)) {
+                continue;
+            }
+
+            $buckets[$monthKey]['orders_count']++;
+            $buckets[$monthKey]['total_amount'] += (int) $order->total;
+
+            foreach ($order->items as $item) {
+                $buckets[$monthKey]['quantity_total'] += (int) $item->quantity;
+
+                if ($item->weight_per_unit_snapshot !== null) {
+                    $buckets[$monthKey]['items_with_weight_count']++;
+                    $buckets[$monthKey]['weight_sum'] += (float) $item->weight_per_unit_snapshot * $item->quantity;
+                } else {
+                    $buckets[$monthKey]['items_without_weight_count']++;
+                }
+            }
+        }
+
+        $maxOrders = max(1, ...array_column($buckets, 'orders_count'));
+
+        $series = [];
+        foreach ($buckets as $bucket) {
+            $withWeight = $bucket['items_with_weight_count'];
+
+            $series[] = [
+                'month_key' => $bucket['month_key'],
+                'label' => $bucket['label'],
+                'orders_count' => $bucket['orders_count'],
+                'quantity_total' => $bucket['quantity_total'],
+                'total_amount' => $bucket['total_amount'],
+                'known_weight_kg' => $withWeight > 0 ? round($bucket['weight_sum'], 2) : null,
+                'items_with_weight_count' => $withWeight,
+                'items_without_weight_count' => $bucket['items_without_weight_count'],
+                'height_percent' => $bucket['orders_count'] > 0
+                    ? max(8, (int) round(($bucket['orders_count'] / $maxOrders) * 100))
+                    : 0,
+            ];
+        }
+
+        return $series;
+    }
+
+    /**
+     * Daftar riwayat item dari pesanan lunas milik warga (terbaru di atas).
+     *
+     * @return LengthAwarePaginator<int, OrderItem>
+     */
+    public function paginateItems(
+        User $user,
+        ?string $period = null,
+        ?string $role = null,
+        int $perPage = self::ITEMS_PER_PAGE
+    ): LengthAwarePaginator {
+        $period = $this->normalizePeriod($period);
+        $role = $this->normalizeRole($role);
+        $perPage = max(1, min(50, $perPage));
+
+        $query = OrderItem::query()
+            ->select('order_items.*')
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->with(['order:id,buyer_id,seller_id,order_number,status,paid_at']);
+
+        $this->applyPaidOrderConstraints($query, $user, $period, $role, 'orders');
+
+        return $query->orderByDesc('orders.paid_at')
+            ->orderByDesc('order_items.id')
+            ->paginate($perPage)
+            ->withQueryString();
+    }
 
     /**
      * Query dasar pesanan lunas (PAID) milik warga sesuai filter peran dan periode.
@@ -198,23 +328,46 @@ class CircularActivityService
      */
     protected function basePaidOrdersQuery(User $user, string $period, string $role): Builder
     {
-        $query = Order::query()->paid();
+        $query = Order::query();
+        $this->applyPaidOrderConstraints($query, $user, $period, $role, 'orders');
+
+        return $query;
+    }
+
+    /**
+     * Terapkan syarat status PAID, kepemilikan peran, dan rentang tanggal bayar secara konsisten.
+     *
+     * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  Builder<TModel>  $query
+     */
+    protected function applyPaidOrderConstraints(
+        Builder $query,
+        User $user,
+        string $period,
+        string $role,
+        string $ordersTable
+    ): void {
+        $userId = $user->getKey();
+
+        $query->where("{$ordersTable}.status", OrderStatus::Paid->value);
 
         if ($role === self::ROLE_SELLER) {
-            $query->where('seller_id', $user->getKey());
+            $query->where("{$ordersTable}.seller_id", $userId);
         } elseif ($role === self::ROLE_BUYER) {
-            $query->where('buyer_id', $user->getKey());
+            $query->where("{$ordersTable}.buyer_id", $userId);
         } else {
-            $query->forParticipant($user);
+            $query->where(function (Builder $q) use ($ordersTable, $userId) {
+                $q->where("{$ordersTable}.buyer_id", $userId)
+                    ->orWhere("{$ordersTable}.seller_id", $userId);
+            });
         }
 
         $range = $this->periodRange($period);
 
         if ($range !== null) {
-            $query->whereBetween('paid_at', $range);
+            $query->whereBetween("{$ordersTable}.paid_at", $range);
         }
-
-        return $query;
     }
 
     /**

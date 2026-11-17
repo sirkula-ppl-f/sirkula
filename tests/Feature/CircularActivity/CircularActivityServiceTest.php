@@ -211,4 +211,113 @@ class CircularActivityServiceTest extends TestCase
         $this->assertSame(2, $onlyBuyer['summary']['total_paid_orders']);
         $this->assertSame(3.0, $onlyBuyer['summary']['known_weight_kg']);
     }
+
+    public function test_grafik_bulanan_urut_kronologis_wib_dan_menangani_berat_null(): void
+    {
+        $nowWib = CarbonImmutable::create(2026, 11, 17, 10, 0, 0, CircularActivityService::TIMEZONE);
+        $this->travelTo($nowWib);
+
+        $warga = User::factory()->create();
+        $rekan = User::factory()->create();
+
+        // Pesanan dibayar pada 1 Nov 2026 pukul 01.30 WIB (= 31 Okt 2026 18.30 UTC) -> wajib masuk bucket Nov 2026
+        $novOrder = Order::factory()->paid(CarbonImmutable::create(2026, 11, 1, 1, 30, 0, CircularActivityService::TIMEZONE)->utc())->create([
+            'buyer_id' => $warga->id,
+            'seller_id' => $rekan->id,
+            'total' => 60_000,
+        ]);
+        OrderItem::factory()->recyclable(3.50)->create([
+            'order_id' => $novOrder->id,
+            'quantity' => 2,
+            'subtotal' => 40_000,
+        ]);
+        OrderItem::factory()->preloved()->withoutWeight()->create([
+            'order_id' => $novOrder->id,
+            'quantity' => 1,
+            'subtotal' => 20_000,
+        ]);
+
+        // Pesanan di bulan Sep 2026 hanya memiliki item tanpa berat (known_weight_kg harus null)
+        $sepOrder = Order::factory()->paid(CarbonImmutable::create(2026, 9, 15, 14, 0, 0, CircularActivityService::TIMEZONE)->utc())->create([
+            'seller_id' => $warga->id,
+            'buyer_id' => $rekan->id,
+            'total' => 25_000,
+        ]);
+        OrderItem::factory()->upcycle()->withoutWeight()->create([
+            'order_id' => $sepOrder->id,
+            'quantity' => 1,
+            'subtotal' => 25_000,
+        ]);
+
+        $series = $this->service->monthlySeries($warga, 6);
+
+        $this->assertCount(6, $series);
+        $this->assertSame(['2026-06', '2026-07', '2026-08', '2026-09', '2026-10', '2026-11'], array_column($series, 'month_key'));
+
+        $sep = collect($series)->firstWhere('month_key', '2026-09');
+        $this->assertSame(1, $sep['orders_count']);
+        $this->assertNull($sep['known_weight_kg']);
+        $this->assertSame(1, $sep['items_without_weight_count']);
+        $this->assertSame(100, $sep['height_percent']);
+
+        $oct = collect($series)->firstWhere('month_key', '2026-10');
+        $this->assertSame(0, $oct['orders_count']);
+        $this->assertNull($oct['known_weight_kg']);
+        $this->assertSame(0, $oct['height_percent']);
+
+        $nov = collect($series)->firstWhere('month_key', '2026-11');
+        $this->assertSame(1, $nov['orders_count']);
+        $this->assertSame(3, $nov['quantity_total']);
+        $this->assertSame(7.0, $nov['known_weight_kg']);
+        $this->assertSame(100, $nov['height_percent']);
+    }
+
+    public function test_paginate_items_mengurutkan_terbaru_dan_menyaring_kepemilikan(): void
+    {
+        $nowWib = CarbonImmutable::create(2026, 11, 17, 10, 0, 0, CircularActivityService::TIMEZONE);
+        $this->travelTo($nowWib);
+
+        $warga = User::factory()->create();
+        $rekan = User::factory()->create();
+        $orangLain = User::factory()->create();
+
+        $olderOrder = Order::factory()->paid($nowWib->subDays(5)->utc())->create([
+            'buyer_id' => $warga->id,
+            'seller_id' => $rekan->id,
+        ]);
+        $olderItem = OrderItem::factory()->preloved(1.00)->create([
+            'order_id' => $olderOrder->id,
+            'title_snapshot' => 'Sepeda Lipat Lama',
+        ]);
+
+        $newerOrder = Order::factory()->paid($nowWib->subDay()->utc())->create([
+            'seller_id' => $warga->id,
+            'buyer_id' => $rekan->id,
+        ]);
+        $newerItem = OrderItem::factory()->recyclable(5.00)->create([
+            'order_id' => $newerOrder->id,
+            'title_snapshot' => 'Botol PET Terpilah',
+        ]);
+
+        // Pesanan belum lunas dan pesanan orang lain tidak boleh muncul
+        $unpaidOrder = Order::factory()->cancelled()->create([
+            'buyer_id' => $warga->id,
+            'seller_id' => $rekan->id,
+        ]);
+        OrderItem::factory()->create(['order_id' => $unpaidOrder->id, 'title_snapshot' => 'Item Batal']);
+
+        $otherOrder = Order::factory()->paid($nowWib->utc())->create([
+            'buyer_id' => $orangLain->id,
+            'seller_id' => $rekan->id,
+        ]);
+        OrderItem::factory()->create(['order_id' => $otherOrder->id, 'title_snapshot' => 'Item Orang Lain']);
+
+        $paginator = $this->service->paginateItems($warga);
+
+        $this->assertSame(2, $paginator->total());
+        $this->assertSame([$newerItem->id, $olderItem->id], $paginator->getCollection()->pluck('id')->all());
+
+        $sellerOnly = $this->service->paginateItems($warga, CircularActivityService::PERIOD_ALL, CircularActivityService::ROLE_SELLER);
+        $this->assertSame([$newerItem->id], $sellerOnly->getCollection()->pluck('id')->all());
+    }
 }
