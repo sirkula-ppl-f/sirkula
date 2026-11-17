@@ -1,12 +1,14 @@
 @props(['placement'])
 
 @php
-    $guide = \App\Models\Guide::where('status', 'published')
-        ->whereHas('placements', function ($query) use ($placement) {
-            $query->where('placement', $placement);
-        })
-        ->inRandomOrder()
-        ->first();
+    $guide = rescue(
+        fn () => \App\Models\Guide::published()
+            ->forPlacement($placement)
+            ->inRandomOrder()
+            ->first(),
+        null,
+        false
+    );
 @endphp
 
 @if ($guide)

@@ -3,23 +3,26 @@
 @php
     $user = auth()->user();
 
-    // Tautan navbar sesuai role. Tambahkan tautan modul baru di sini.
+    // Tautan navbar sesuai role. Dipisahkan antara navigasi utama (warga/publik)
+    // dan navigasi pengelolaan (admin) agar hierarki visual jelas dan tidak menumpuk.
     // Key opsional: 'active' (pola routeIs untuk status aktif, bawaan 'route') dan 'dusk'.
-    $links = [];
+    $userLinks = [];
+    $adminLinks = [];
 
     if ($user) {
-        $links[] = ['label' => 'Beranda', 'route' => 'dashboard'];
-        $links[] = ['label' => 'Keranjang', 'route' => 'cart.index'];
-        $links[] = ['label' => 'Profil', 'route' => 'profil.edit', 'active' => 'profil.*', 'dusk' => 'nav-profil'];
-        $links[] = ['label' => __('reference-prices.nav.public'), 'route' => 'reference-prices.index', 'active' => 'reference-prices.*', 'dusk' => 'nav-reference-prices'];
+        $userLinks[] = ['label' => 'Beranda', 'route' => 'dashboard'];
+        $userLinks[] = ['label' => 'Keranjang', 'route' => 'cart.index'];
+        $userLinks[] = ['label' => 'Profil', 'route' => 'profil.edit', 'active' => 'profil.*', 'dusk' => 'nav-profil'];
+        $userLinks[] = ['label' => __('reference-prices.nav.public'), 'route' => 'reference-prices.index', 'active' => 'reference-prices.*', 'dusk' => 'nav-reference-prices'];
 
         if ($user->isAdmin()) {
-            $links[] = ['label' => 'Admin', 'route' => 'admin.dashboard'];
-            $links[] = ['label' => __('master-data.categories.nav'), 'route' => 'admin.categories.index', 'active' => 'admin.categories.*', 'dusk' => 'nav-categories'];
-            $links[] = ['label' => __('master-data.materials.nav'), 'route' => 'admin.materials.index', 'active' => 'admin.materials.*', 'dusk' => 'nav-materials'];
-            $links[] = ['label' => 'Hub', 'route' => 'admin.hubs.index', 'active' => 'admin.hubs.*', 'dusk' => 'nav-hubs'];
-            $links[] = ['label' => __('reference-prices.nav.admin'), 'route' => 'admin.reference-prices.index', 'active' => 'admin.reference-prices.*', 'dusk' => 'nav-admin-reference-prices'];
-            $links[] = ['label' => 'Kelola Akun', 'route' => 'admin.users.index', 'active' => 'admin.users.*', 'dusk' => 'nav-users'];
+            $adminLinks[] = ['label' => 'Admin', 'route' => 'admin.dashboard'];
+            $adminLinks[] = ['label' => __('master-data.categories.nav'), 'route' => 'admin.categories.index', 'active' => 'admin.categories.*', 'dusk' => 'nav-categories'];
+            $adminLinks[] = ['label' => __('master-data.materials.nav'), 'route' => 'admin.materials.index', 'active' => 'admin.materials.*', 'dusk' => 'nav-materials'];
+            $adminLinks[] = ['label' => 'Hub', 'route' => 'admin.hubs.index', 'active' => 'admin.hubs.*', 'dusk' => 'nav-hubs'];
+            $adminLinks[] = ['label' => __('reference-prices.nav.admin'), 'route' => 'admin.reference-prices.index', 'active' => 'admin.reference-prices.*', 'dusk' => 'nav-admin-reference-prices'];
+            $adminLinks[] = ['label' => 'Panduan', 'route' => 'admin.guides.index', 'active' => 'admin.guides.*', 'dusk' => 'nav-guides'];
+            $adminLinks[] = ['label' => 'Kelola Akun', 'route' => 'admin.users.index', 'active' => 'admin.users.*', 'dusk' => 'nav-users'];
         }
     }
 @endphp
@@ -66,17 +69,17 @@
                 <div
                     id="nav-menu-panel"
                     dusk="nav-menu-panel"
-                    class="w-full max-md:border-t max-md:border-gray-100 max-md:pt-2 md:flex md:w-auto md:flex-1 md:items-center md:justify-between md:gap-x-6"
+                    class="w-full max-md:border-t max-md:border-gray-100 max-md:pt-2 md:flex md:w-auto md:flex-1 md:flex-wrap md:items-center md:justify-between md:gap-x-6 md:gap-y-2.5"
                 >
-                    <ul class="flex flex-col gap-y-1 text-sm font-medium md:flex-row md:flex-wrap md:items-center md:gap-x-4 md:gap-y-2">
+                    <ul class="flex flex-col gap-y-1 text-sm font-medium md:order-1 md:flex-row md:flex-wrap md:items-center md:gap-x-4 md:gap-y-2">
                         @auth
-                            @foreach ($links as $link)
+                            @foreach ($userLinks as $link)
                                 @php($isCurrent = request()->routeIs($link['active'] ?? $link['route']))
                                 <li>
                                     <a
                                         href="{{ route($link['route']) }}"
                                         @class([
-                                            'block rounded-md px-2 py-2 md:px-1 md:py-0.5',
+                                            'block rounded-md px-2 py-2 md:px-2 md:py-1',
                                             'bg-brand-50 text-brand-700 md:bg-transparent md:underline md:underline-offset-4' => $isCurrent,
                                             'text-gray-700 hover:bg-gray-50 hover:text-brand-700 md:hover:bg-transparent' => ! $isCurrent,
                                         ])
@@ -119,8 +122,42 @@
                     </ul>
 
                     @auth
-                        <div class="mt-3 flex items-center justify-between gap-3 border-t border-gray-100 pt-3 text-sm md:ms-auto md:mt-0 md:justify-start md:border-t-0 md:pt-0">
-                            <span class="max-w-40 truncate text-gray-700" dusk="nav-user-name">{{ $user->name }}</span>
+                        @if ($user->isAdmin() && count($adminLinks) > 0)
+                            <div class="mt-2 border-t border-gray-100 pt-2 md:order-3 md:mt-0 md:flex md:w-full md:items-center md:gap-x-3 md:pt-2.5">
+                                <span class="block px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400 md:inline-flex md:items-center md:rounded md:bg-gray-100 md:px-2 md:py-0.5 md:text-gray-600">
+                                    Panel Admin
+                                </span>
+                                <ul class="flex flex-col gap-y-1 text-sm font-medium md:flex-row md:flex-wrap md:items-center md:gap-x-1.5 md:gap-y-1">
+                                    @foreach ($adminLinks as $link)
+                                        @php($isCurrent = request()->routeIs($link['active'] ?? $link['route']))
+                                        <li>
+                                            <a
+                                                href="{{ route($link['route']) }}"
+                                                @class([
+                                                    'block rounded-md px-2 py-2 transition md:px-2.5 md:py-1',
+                                                    'bg-brand-50 font-semibold text-brand-700 ring-1 ring-brand-600/20' => $isCurrent,
+                                                    'text-gray-600 hover:bg-gray-100 hover:text-brand-700' => ! $isCurrent,
+                                                ])
+                                                @if ($isCurrent) aria-current="page" @endif
+                                                @isset($link['dusk']) dusk="{{ $link['dusk'] }}" @endisset
+                                            >
+                                                {{ $link['label'] }}
+                                            </a>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
+                        <div class="mt-3 flex items-center justify-between gap-3 border-t border-gray-100 pt-3 text-sm md:order-2 md:ms-auto md:mt-0 md:justify-start md:border-t-0 md:pt-0">
+                            <div class="flex items-center gap-2 min-w-0">
+                                @if ($user->isAdmin())
+                                    <span class="hidden rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700 ring-1 ring-brand-600/20 sm:inline-block">
+                                        Admin
+                                    </span>
+                                @endif
+                                <span class="max-w-40 truncate font-medium text-gray-700" dusk="nav-user-name">{{ $user->name }}</span>
+                            </div>
 
                             {{-- Logout hanya lewat POST + CSRF --}}
                             <form method="POST" action="{{ route('logout') }}" data-submit-once>
@@ -135,7 +172,7 @@
                             </form>
                         </div>
                     @else
-                        <div class="mt-3 flex items-center gap-3 border-t border-gray-100 pt-3 text-sm md:ms-auto md:mt-0 md:border-t-0 md:pt-0">
+                        <div class="mt-3 flex items-center gap-3 border-t border-gray-100 pt-3 text-sm md:order-2 md:ms-auto md:mt-0 md:border-t-0 md:pt-0">
                             <a href="{{ route('login') }}" class="font-medium text-gray-700 hover:text-brand-700">
                                 Masuk
                             </a>
