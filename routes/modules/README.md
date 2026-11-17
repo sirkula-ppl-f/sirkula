@@ -359,3 +359,19 @@ php artisan db:seed --class=ReferencePriceDemoSeeder
 - Grafik hanya menampilkan 12 tanggal berlaku terakhir. Riwayat lengkap ada di tabel.
 - Tidak ada ubah atau hapus. Koreksi dilakukan dengan menerbitkan entri baru (boleh dengan tanggal berlaku yang sama; entri yang terbit paling akhir yang dipakai).
 - Lebar label sumbu harga pada grafik diperkirakan dari jumlah karakter, bukan diukur dari font, jadi ruangnya sengaja dilebihkan.
+
+## Kontrak status pesanan (orders)
+
+| Status | Yang boleh mengubah | Keterangan |
+|---|---|---|
+| PENDING_PAYMENT | Checkout (PBI-12) | Pesanan dibuat, stok direservasi |
+| EXPIRED | Checkout (PBI-12) | Lewat 24 jam, stok dilepas |
+| CANCELLED | Checkout (PBI-12) | Dibatalkan pembeli, stok dilepas |
+| PAID | Pembayaran (PBI-13) | Notifikasi settlement terverifikasi |
+| PAYMENT_REVIEW | Pembayaran (PBI-13) | Pembayaran datang setelah pesanan tidak bisa dibayar lagi |
+
+- Hanya `PaymentStatusResolver` yang boleh menetapkan PAID.
+- PAID bersifat final.
+- Kolom orders: order_number, buyer_id, seller_id, total, status, expires_at, paid_at.
+- Perubahan kolom berikutnya lewat migrasi baru.
+- order_items dibuat Rasyid (PBI-12) lewat migrasi terpisah.
