@@ -63,6 +63,21 @@
             <span class="mt-4 text-sm font-semibold text-brand-700">{{ __('reference-prices.admin.dashboard.link') }} &rarr;</span>
         </a>
 
+        <!-- Menu Panduan dan Edukasi yang baru ditambahkan -->
+        <a
+            href="{{ route('admin.guides.index') }}"
+            dusk="manage-guides-link"
+            class="flex flex-col justify-between rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200 transition hover:ring-brand-600"
+        >
+            <div>
+                <h2 class="text-base font-semibold text-gray-900">Panduan dan Edukasi</h2>
+                <p class="mt-1 text-sm text-gray-600">
+                    Kelola tips, panduan, dan penempatan edukasi untuk pengguna aplikasi.
+                </p>
+            </div>
+            <span class="mt-4 text-sm font-semibold text-brand-700">Buka Panduan &rarr;</span>
+        </a>
+
         <a
             href="{{ route('admin.users.index') }}"
             dusk="manage-users-link"
