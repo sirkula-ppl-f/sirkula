@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * STUB untuk PBI-13. Default: pesanan menunggu pembayaran, kedaluwarsa 24 jam lagi.
+ * Default: pesanan menunggu pembayaran, kedaluwarsa 24 jam lagi.
  *
  * @extends Factory<Order>
  */

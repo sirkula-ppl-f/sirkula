@@ -9,8 +9,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
- * STUB untuk PBI-13. Diganti oleh model Order asli dari PBI-12 (checkout).
- * Yang dipakai pembayaran: order_number, total, status, expires_at, paid_at, buyer(), seller(), payment().
+ * Header pesanan. Status dipegang dua pihak:
+ * - Checkout (PBI-12): PENDING_PAYMENT, EXPIRED, CANCELLED
+ * - Pembayaran (PBI-13): PAID, PAYMENT_REVIEW
  */
 class Order extends Model
 {
