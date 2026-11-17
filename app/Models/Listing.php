@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Database\Factories\ListingFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Model listing untuk katalog dan keranjang.
@@ -17,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Listing extends Model
 {
+     /** @use HasFactory<ListingFactory> */
     use HasFactory;
 
     public const REVIEW_APPROVED = 'APPROVED';
@@ -25,18 +28,30 @@ class Listing extends Model
 
     protected $guarded = [];
 
-    /** @return BelongsTo<User, $this> */
+    /**
++     * Relasi ke penjual.
++     *
++     * @return BelongsTo<User, $this>
++     */
     public function seller(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    /** @return BelongsTo<Category, $this> */
+    /**
++     * Relasi ke kategori listing.
++     *
++     * @return BelongsTo<Category, $this>
++     */
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'category_id');
     }
 
+    /**
++     * Aturan listing yang boleh ditampilkan:
++     * disetujui, aktif, stok tersedia, dan penjual aktif.
++     */
     public function scopePurchasable(Builder $query): void
     {
         $query->where('review_status', self::REVIEW_APPROVED)
@@ -53,7 +68,8 @@ class Listing extends Model
             && $this->seller?->isActive() === true;
     }
 
-    public function images()
+    /** @return HasMany<ListingImage, $this> */
+    public function images(): HasMany
     {
         return $this->hasMany(ListingImage::class);
     }

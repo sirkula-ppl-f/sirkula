@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\ItemCondition;
 use App\Enums\ListingType;
 use App\Models\Category;
 use Closure;
@@ -28,7 +29,7 @@ class StoreListingRequest extends FormRequest
     {
         return [
             'tipe' => ['required', Rule::in([ListingType::Preloved->value])],
-            'kondisi' => ['required', Rule::in(['Seperti Baru', 'Baik', 'Cukup', 'Kurang'])],
+            'kondisi' => ['required', Rule::enum(ItemCondition::class)],
             'stok' => 'required|integer|min:1',
 
             'judul' => 'required|string|max:255',
