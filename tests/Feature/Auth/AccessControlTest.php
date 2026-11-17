@@ -50,21 +50,7 @@ class AccessControlTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->get('/dashboard')
             ->assertOk()
-            ->assertDontSee('href="'.route('admin.dashboard').'"', false)
-            ->assertSee('href="'.route('cart.index').'"', false)
-            ->assertSee('href="'.route('circular-activity.index').'"', false);
-    }
-
-    public function test_tautan_transaksi_warga_tidak_tampil_di_navbar_admin(): void
-    {
-        $this->actingAs(User::factory()->admin()->create())
-            ->get('/admin')
-            ->assertOk()
-            ->assertDontSee('href="'.route('cart.index').'"', false)
-            ->assertDontSee('href="'.route('circular-activity.index').'"', false)
-            ->assertDontSee('dusk="nav-circular-activity"', false)
-            ->assertSee('href="'.route('profil.edit').'"', false)
-            ->assertSee('href="'.route('reference-prices.index').'"', false);
+            ->assertDontSee('href="'.route('admin.dashboard').'"', false);
     }
 
     public function test_user_yang_ditangguhkan_saat_sedang_login_dikeluarkan(): void

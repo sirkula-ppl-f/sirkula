@@ -16,9 +16,8 @@
     ];
 @endphp
 
-<x-layouts.app title="Aktivitas Sirkular">
-    <div class="mb-6 max-w-3xl space-y-2">
-        <h1 class="text-2xl font-semibold text-gray-900">Catatan Aktivitas Sirkular</h1>
+<x-layouts.app title="Catatan Aktivitas Sirkular">
+    <div class="mb-6 max-w-3xl">
         <p class="text-sm text-gray-700">
             Ringkasan barang dan material yang sudah kamu salurkan atau beli melalui transaksi lunas di Sirkula.
         </p>

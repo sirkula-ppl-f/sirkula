@@ -36,7 +36,9 @@ return new class extends Migration
             Schema::create('order_items', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
-                $table->foreignId('listing_id')->nullable()->constrained('listings')->nullOnDelete();
+                // FK ke listings sengaja belum dipasang di stub agar migrasi ini tidak gagal
+                // saat stub listings (2026_10_30) diganti oleh migrasi asli PBI-07/08.
+                $table->unsignedBigInteger('listing_id')->nullable()->index();
                 $table->string('title_snapshot');
                 $table->string('type_snapshot', 20)->index();
                 $table->unsignedBigInteger('unit_price')->default(0);

@@ -43,9 +43,10 @@ class CircularActivityDemoSeederTest extends TestCase
     {
         $default = config('database.default');
 
+        // Hanya config yang diubah; seeder menolak sebelum membuka koneksi ke host ini.
         config([
             'database.default' => 'mysql',
-            'database.connections.mysql.host' => '157.10.253.27',
+            'database.connections.mysql.host' => 'db.contoh.invalid',
         ]);
 
         try {

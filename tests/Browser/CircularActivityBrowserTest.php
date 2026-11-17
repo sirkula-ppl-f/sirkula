@@ -5,6 +5,7 @@ namespace Tests\Browser;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\User;
+use Facebook\WebDriver\Chrome\ChromeDevToolsDriver;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
@@ -167,14 +168,33 @@ class CircularActivityBrowserTest extends DuskTestCase
         ]);
 
         $this->browse(function (Browser $browser) use ($warga) {
-            $browser->resize(360, 800)
-                ->loginAs($warga)
-                ->visit('/aktivitas-sirkular')
-                ->waitFor('@circular-history-table')
-                ->assertVisible('@circular-estimate-disclaimer');
+            $devTools = new ChromeDevToolsDriver($browser->driver);
+            $devTools->execute('Emulation.setDeviceMetricsOverride', [
+                'width' => 360,
+                'height' => 800,
+                'deviceScaleFactor' => 1,
+                'mobile' => true,
+            ]);
 
-            $overflow = $browser->script('return document.documentElement.scrollWidth > document.documentElement.clientWidth;')[0];
-            $this->assertFalse($overflow, 'Halaman mengalami horizontal overflow pada lebar layar 360px.');
+            try {
+                $browser->loginAs($warga)
+                    ->visit('/aktivitas-sirkular')
+                    ->waitFor('@circular-history-table')
+                    ->assertVisible('@circular-estimate-disclaimer');
+
+                [$scrollWidth, $innerWidth] = $browser->script(
+                    'return [document.documentElement.scrollWidth, window.innerWidth];'
+                )[0];
+
+                $this->assertLessThanOrEqual(360, $innerWidth, 'Viewport tes harus selebar 360px.');
+                $this->assertLessThanOrEqual(
+                    $innerWidth,
+                    $scrollWidth,
+                    "Halaman mengalami horizontal overflow pada lebar layar 360px ({$scrollWidth}px > {$innerWidth}px)."
+                );
+            } finally {
+                $devTools->execute('Emulation.clearDeviceMetricsOverride');
+            }
         });
     }
 }
