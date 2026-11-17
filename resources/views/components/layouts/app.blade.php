@@ -10,11 +10,15 @@
     $adminLinks = [];
 
     if ($user) {
-        $userLinks[] = ['label' => 'Beranda', 'route' => 'dashboard'];
-        $userLinks[] = ['label' => 'Keranjang', 'route' => 'cart.index'];
-        $userLinks[] = ['label' => 'Profil', 'route' => 'profil.edit', 'active' => 'profil.*', 'dusk' => 'nav-profil'];
-        $userLinks[] = ['label' => 'Aktivitas Sirkular', 'route' => 'circular-activity.index', 'active' => 'circular-activity.*', 'dusk' => 'nav-circular-activity'];
-        $userLinks[] = ['label' => __('reference-prices.nav.public'), 'route' => 'reference-prices.index', 'active' => 'reference-prices.*', 'dusk' => 'nav-reference-prices'];
+        // Tautan transaksi pribadi warga (Keranjang & Aktivitas Sirkular) disembunyikan
+        // dari navbar Admin agar tetap ringkas dan sesuai pemisahan peran.
+        $userLinks = array_values(array_filter([
+            ['label' => 'Beranda', 'route' => 'dashboard'],
+            ['label' => 'Keranjang', 'route' => 'cart.index', 'wargaOnly' => true],
+            ['label' => 'Profil', 'route' => 'profil.edit', 'active' => 'profil.*', 'dusk' => 'nav-profil'],
+            ['label' => 'Aktivitas Sirkular', 'route' => 'circular-activity.index', 'active' => 'circular-activity.*', 'dusk' => 'nav-circular-activity', 'wargaOnly' => true],
+            ['label' => __('reference-prices.nav.public'), 'route' => 'reference-prices.index', 'active' => 'reference-prices.*', 'dusk' => 'nav-reference-prices'],
+        ], fn (array $link): bool => ! ($user->isAdmin() && ($link['wargaOnly'] ?? false))));
 
         if ($user->isAdmin()) {
             $adminLinks[] = ['label' => 'Admin', 'route' => 'admin.dashboard'];
