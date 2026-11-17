@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Listing extends Model
 {
-     /** @use HasFactory<ListingFactory> */
+    /** @use HasFactory<ListingFactory> */
     use HasFactory;
 
     public const REVIEW_APPROVED = 'APPROVED';
