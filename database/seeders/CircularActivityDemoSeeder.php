@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Enums\ListingType;
-use App\Enums\OrderStatus;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\Order;
@@ -133,8 +132,7 @@ class CircularActivityDemoSeeder extends Seeder
                     'buyer_id' => $scenario['role'] === 'buyer' ? $warga->id : $mitra->id,
                     'seller_id' => $scenario['role'] === 'seller' ? $warga->id : $mitra->id,
                     'order_number' => self::ORDER_PREFIX.$scenario['code'],
-                    'checkout_key' => 'demo-pbi20-'.$scenario['code'],
-                    'status' => OrderStatus::Paid,
+                    'status' => Order::STATUS_PAID,
                     'total' => $total,
                     'expires_at' => $paidAt->addDay(),
                     'paid_at' => $paidAt,
@@ -159,8 +157,7 @@ class CircularActivityDemoSeeder extends Seeder
                 'buyer_id' => $warga->id,
                 'seller_id' => $mitra->id,
                 'order_number' => self::ORDER_PREFIX.'PENDING',
-                'checkout_key' => 'demo-pbi20-pending',
-                'status' => OrderStatus::PendingPayment,
+                'status' => Order::STATUS_PENDING_PAYMENT,
                 'total' => 100_000,
                 'expires_at' => $nowWib->addDay()->utc(),
                 'paid_at' => null,

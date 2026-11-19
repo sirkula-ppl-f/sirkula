@@ -2,41 +2,39 @@
 
 namespace App\Models;
 
-use App\Enums\OrderStatus;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
- * Model pesanan untuk pencatatan transaksi dan aktivitas sirkular.
- *
- * STUB sementara untuk mendukung PBI-20 (catatan aktivitas sirkular).
- * Koordinasikan dengan Abdullah (PBI-12/14) dan Bobby (PBI-13/15) saat
- * mengintegrasikan modul pesanan dan pembayaran.
+ * Header pesanan. Status dipegang dua pihak:
+ * - Checkout (PBI-12): PENDING_PAYMENT, EXPIRED, CANCELLED
+ * - Pembayaran (PBI-13): PAID, PAYMENT_REVIEW
  */
 class Order extends Model
 {
     /** @use HasFactory<OrderFactory> */
     use HasFactory;
 
-    protected $fillable = [
-        'buyer_id',
-        'seller_id',
-        'order_number',
-        'checkout_key',
-        'status',
-        'total',
-        'expires_at',
-        'paid_at',
-    ];
+    public const STATUS_PENDING_PAYMENT = 'PENDING_PAYMENT';
+
+    public const STATUS_PAYMENT_REVIEW = 'PAYMENT_REVIEW';
+
+    public const STATUS_PAID = 'PAID';
+
+    public const STATUS_CANCELLED = 'CANCELLED';
+
+    public const STATUS_EXPIRED = 'EXPIRED';
+
+    protected $guarded = [];
 
     protected function casts(): array
     {
         return [
-            'status' => OrderStatus::class,
             'total' => 'integer',
             'expires_at' => 'datetime',
             'paid_at' => 'datetime',
@@ -74,11 +72,19 @@ class Order extends Model
     }
 
     /**
+     * @return HasOne<Payment, $this>
+     */
+    public function payment(): HasOne
+    {
+        return $this->hasOne(Payment::class);
+    }
+
+    /**
      * Hanya pesanan yang sudah berstatus PAID (Lunas).
      */
     public function scopePaid(Builder $query): void
     {
-        $query->where('status', OrderStatus::Paid);
+        $query->where('status', self::STATUS_PAID);
     }
 
     /**
@@ -96,6 +102,13 @@ class Order extends Model
 
     public function isPaid(): bool
     {
-        return $this->status === OrderStatus::Paid;
+        return $this->status === self::STATUS_PAID;
+    }
+
+    /** Pesanan masih menunggu pembayaran dan belum melewati batas waktu. */
+    public function isPayable(): bool
+    {
+        return $this->status === self::STATUS_PENDING_PAYMENT
+            && ($this->expires_at === null || $this->expires_at->isFuture());
     }
 }

@@ -3,7 +3,6 @@
 namespace Tests\Unit\Models;
 
 use App\Enums\ListingType;
-use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\User;
@@ -14,7 +13,7 @@ class OrderModelTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_order_dan_order_item_tersimpan_dengan_cast_enum_yang_benar(): void
+    public function test_order_dan_order_item_tersimpan_dengan_status_dan_cast_yang_benar(): void
     {
         $buyer = User::factory()->create();
         $seller = User::factory()->create();
@@ -32,7 +31,7 @@ class OrderModelTest extends TestCase
             'subtotal' => 75_000,
         ]);
 
-        $this->assertSame(OrderStatus::Paid, $order->status);
+        $this->assertSame(Order::STATUS_PAID, $order->status);
         $this->assertTrue($order->isPaid());
         $this->assertTrue($order->buyer->is($buyer));
         $this->assertTrue($order->seller->is($seller));
@@ -70,7 +69,7 @@ class OrderModelTest extends TestCase
         Order::factory()->create([
             'buyer_id' => $warga->id,
             'seller_id' => $rekan->id,
-            'status' => OrderStatus::PendingPayment,
+            'status' => Order::STATUS_PENDING_PAYMENT,
         ]);
 
         // Pesanan lunas milik orang lain (tidak boleh masuk scope forParticipant warga)

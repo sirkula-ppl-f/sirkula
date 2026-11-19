@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\User;
 use Carbon\CarbonInterface;
@@ -10,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 /**
- * Factory pesanan untuk mendukung pengujian PBI-20 (catatan aktivitas sirkular).
+ * Default: pesanan menunggu pembayaran, kedaluwarsa 24 jam lagi.
  *
  * @extends Factory<Order>
  */
@@ -21,13 +20,12 @@ class OrderFactory extends Factory
     public function definition(): array
     {
         return [
+            'order_number' => 'SRK-'.now()->format('Ymd').'-'.Str::upper(Str::random(8)),
             'buyer_id' => User::factory(),
             'seller_id' => User::factory(),
-            'order_number' => 'ORD-'.now()->format('Ymd').'-'.Str::upper(Str::random(8)),
-            'checkout_key' => (string) Str::uuid(),
-            'status' => OrderStatus::PendingPayment,
-            'total' => 50_000,
-            'expires_at' => now()->addHours(24),
+            'total' => 112500,
+            'status' => Order::STATUS_PENDING_PAYMENT,
+            'expires_at' => now()->addDay(),
             'paid_at' => null,
         ];
     }
@@ -38,7 +36,7 @@ class OrderFactory extends Factory
     public function paid(?CarbonInterface $paidAt = null): static
     {
         return $this->state(fn () => [
-            'status' => OrderStatus::Paid,
+            'status' => Order::STATUS_PAID,
             'paid_at' => $paidAt ?? now(),
         ]);
     }
@@ -49,7 +47,7 @@ class OrderFactory extends Factory
     public function paymentReview(): static
     {
         return $this->state([
-            'status' => OrderStatus::PaymentReview,
+            'status' => Order::STATUS_PAYMENT_REVIEW,
             'paid_at' => null,
         ]);
     }
@@ -60,7 +58,7 @@ class OrderFactory extends Factory
     public function cancelled(): static
     {
         return $this->state([
-            'status' => OrderStatus::Cancelled,
+            'status' => Order::STATUS_CANCELLED,
             'paid_at' => null,
         ]);
     }
@@ -71,9 +69,19 @@ class OrderFactory extends Factory
     public function expired(): static
     {
         return $this->state([
-            'status' => OrderStatus::Expired,
+            'status' => Order::STATUS_EXPIRED,
             'expires_at' => now()->subHour(),
             'paid_at' => null,
         ]);
+    }
+
+    public function lunas(): static
+    {
+        return $this->paid();
+    }
+
+    public function kedaluwarsa(): static
+    {
+        return $this->expired();
     }
 }

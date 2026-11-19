@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Model listing untuk katalog dan keranjang.
@@ -65,5 +66,11 @@ class Listing extends Model
             && $this->publish_status === self::PUBLISH_ACTIVE
             && $this->stock > 0
             && $this->seller?->isActive() === true;
+    }
+
+    /** @return HasMany<ListingImage, $this> */
+    public function images(): HasMany
+    {
+        return $this->hasMany(ListingImage::class);
     }
 }
