@@ -5,6 +5,7 @@ namespace Tests\Browser;
 use App\Enums\ListingType;
 use App\Models\Category;
 use App\Models\Listing;
+use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
@@ -25,6 +26,31 @@ class CatalogTest extends DuskTestCase
                 ->assertSee('Sepeda Lipat Bekas')
                 ->assertSee('Masuk')
                 ->assertSee('Daftar');
+        });
+    }
+
+    public function test_warga_and_admin_can_navigate_to_catalog_from_navbar(): void
+    {
+        $warga = User::factory()->create();
+        $admin = User::factory()->admin()->create();
+        Listing::factory()->create(['title' => 'Rak Buku Kayu 4 Susun']);
+
+        $this->browse(function (Browser $browser) use ($warga, $admin) {
+            $browser->loginAs($warga)
+                ->visit(route('dashboard'))
+                ->assertPresent('@nav-catalog')
+                ->click('@nav-catalog')
+                ->waitForText('Katalog Sirkula')
+                ->assertPathIs('/katalog')
+                ->assertSee('Rak Buku Kayu 4 Susun');
+
+            $browser->loginAs($admin)
+                ->visit(route('admin.dashboard'))
+                ->assertPresent('@nav-catalog')
+                ->click('@nav-catalog')
+                ->waitForText('Katalog Sirkula')
+                ->assertPathIs('/katalog')
+                ->assertSee('Rak Buku Kayu 4 Susun');
         });
     }
 

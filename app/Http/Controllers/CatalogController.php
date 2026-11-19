@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ItemCondition;
 use App\Enums\ListingType;
 use App\Models\Category;
+use App\Models\Hub;
 use App\Models\Listing;
 use App\Models\Region;
+use App\Services\ReferencePriceService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
@@ -17,17 +20,23 @@ class CatalogController extends Controller
         $sort = (string) $request->query('sort', 'newest');
         $type = (string) $request->query('type', '');
         $categoryId = $request->query('category_id');
+        $condition = (string) $request->query('condition', '');
         $regionId = $request->query('region_id');
+        $hubId = $request->query('hub_id');
         $minPrice = $request->query('min_price');
         $maxPrice = $request->query('max_price');
 
         $query = Listing::purchasable()
-            ->with(['category', 'seller.region']);
+            ->with(['category', 'material', 'hub', 'region', 'seller.region', 'images']);
 
-        // Pencarian berdasarkan judul dengan escape karakter LIKE.
+        // Pencarian berdasarkan judul atau deskripsi dengan escape karakter LIKE (FR-012).
         if ($search !== '') {
             $escaped = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $search);
-            $query->whereRaw("title LIKE ? ESCAPE '!'", ["%{$escaped}%"]);
+            $pattern = "%{$escaped}%";
+            $query->where(function (Builder $q) use ($pattern) {
+                $q->whereRaw("title LIKE ? ESCAPE '!'", [$pattern])
+                    ->orWhereRaw("description LIKE ? ESCAPE '!'", [$pattern]);
+            });
         }
 
         // Filter tipe listing.
@@ -47,11 +56,32 @@ class CatalogController extends Controller
             $query->where('category_id', $categoryId);
         }
 
-        // Filter wilayah melalui wilayah penjual.
+        // Filter kondisi barang (FR-012).
+        $validConditions = array_map(
+            fn (ItemCondition $itemCondition) => $itemCondition->value,
+            ItemCondition::cases()
+        );
+
+        if (in_array($condition, $validConditions, true)) {
+            $query->where('item_condition', $condition);
+        } else {
+            $condition = '';
+        }
+
+        // Filter wilayah melalui wilayah listing atau wilayah penjual.
         if ($regionId !== null && $regionId !== '') {
-            $query->whereHas('seller', function (Builder $seller) use ($regionId) {
-                $seller->where('region_id', $regionId);
+            $query->where(function (Builder $q) use ($regionId) {
+                $q->where('region_id', $regionId)
+                    ->orWhere(function (Builder $fallback) use ($regionId) {
+                        $fallback->whereNull('region_id')
+                            ->whereHas('seller', fn (Builder $seller) => $seller->where('region_id', $regionId));
+                    });
             });
+        }
+
+        // Filter hub komunitas (FR-012).
+        if ($hubId !== null && $hubId !== '') {
+            $query->where('hub_id', $hubId);
         }
 
         // Filter harga minimum.
@@ -88,21 +118,32 @@ class CatalogController extends Controller
             'sort' => $sort,
             'type' => $type,
             'categoryId' => $categoryId,
+            'condition' => $condition,
             'regionId' => $regionId,
+            'hubId' => $hubId,
             'categories' => Category::active()->orderBy('name')->get(),
+            'conditions' => ItemCondition::cases(),
             'regions' => Region::orderBy('name')->get(),
+            'hubs' => Hub::active()->orderBy('name')->get(),
             'listingTypes' => ListingType::cases(),
         ]);
     }
 
-    public function show(int $id)
+    public function show(int $id, ReferencePriceService $referencePriceService)
     {
         $listing = Listing::purchasable()
-            ->with(['category', 'seller.region'])
+            ->with(['category', 'material', 'hub', 'region', 'seller.region', 'images'])
             ->findOrFail($id);
+
+        $effectiveRegion = $listing->region ?? $listing->seller?->region;
+        $referencePrice = ($listing->material && $effectiveRegion)
+            ? $referencePriceService->latestFor($listing->material, $effectiveRegion)
+            : null;
 
         return view('catalog.show', [
             'listing' => $listing,
+            'effectiveRegion' => $effectiveRegion,
+            'referencePrice' => $referencePrice,
         ]);
     }
 }
