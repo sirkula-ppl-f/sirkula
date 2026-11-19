@@ -127,9 +127,11 @@ class ReferencePricePublicNavigationTest extends TestCase
 
     public function test_navbar_katalog_menaut_ke_halaman_harga_acuan(): void
     {
-        $this->get(route('catalog.index'))
+        $html = $this->get(route('catalog.index'))
             ->assertOk()
-            ->assertSee('<a href="'.route('reference-prices.index').'">Harga Acuan</a>', false)
-            ->assertDontSee('<a href="#">Harga Acuan</a>', false);
+            ->assertDontSee('<a href="#">Harga Acuan</a>', false)
+            ->getContent();
+
+        $this->assertTautanPublik($html, aktif: false);
     }
 }
