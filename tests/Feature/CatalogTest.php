@@ -283,4 +283,39 @@ class CatalogTest extends TestCase
 
         $response->assertNotFound();
     }
+
+    public function test_catalog_ignores_invalid_or_array_query_parameters_gracefully(): void
+    {
+        Listing::factory()->create(['title' => 'Sepeda Lipat Bekas', 'price' => 200000]);
+        Listing::factory()->create(['title' => 'Kipas Angin', 'price' => 100000]);
+
+        $this->get(route('catalog.index', [
+            'search' => ['array'],
+            'type' => ['array'],
+            'category_id' => ['array'],
+            'condition' => ['array'],
+            'region_id' => ['array'],
+            'hub_id' => ['array'],
+            'min_price' => ['array'],
+            'max_price' => ['array'],
+            'sort' => ['array'],
+        ]))
+            ->assertOk()
+            ->assertSee('Sepeda Lipat Bekas')
+            ->assertSee('Kipas Angin');
+    }
+
+    public function test_catalog_can_be_sorted_by_lowest_and_highest_price(): void
+    {
+        Listing::factory()->create(['title' => 'Barang Mahal', 'price' => 500000]);
+        Listing::factory()->create(['title' => 'Barang Murah', 'price' => 50000]);
+
+        $this->get(route('catalog.index', ['sort' => 'price_asc']))
+            ->assertOk()
+            ->assertSeeInOrder(['Barang Murah', 'Barang Mahal']);
+
+        $this->get(route('catalog.index', ['sort' => 'price_desc']))
+            ->assertOk()
+            ->assertSeeInOrder(['Barang Mahal', 'Barang Murah']);
+    }
 }

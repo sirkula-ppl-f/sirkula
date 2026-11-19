@@ -8,9 +8,21 @@
         || $condition !== ''
         || ($regionId !== null && $regionId !== '')
         || ($hubId !== null && $hubId !== '')
-        || (request('min_price') !== null && request('min_price') !== '')
-        || (request('max_price') !== null && request('max_price') !== '')
+        || ($minPrice !== null && $minPrice !== '')
+        || ($maxPrice !== null && $maxPrice !== '')
         || $sort !== 'newest';
+
+    $filterParams = array_filter([
+        'search' => $search !== '' ? $search : null,
+        'type' => $type !== '' ? $type : null,
+        'category_id' => $categoryId,
+        'condition' => $condition !== '' ? $condition : null,
+        'region_id' => $regionId,
+        'hub_id' => $hubId,
+        'min_price' => $minPrice,
+        'max_price' => $maxPrice,
+        'sort' => $sort !== 'newest' ? $sort : null,
+    ], fn ($val) => $val !== null && $val !== '');
 
     $typeStyles = [
         ListingType::Preloved->value => [
@@ -56,11 +68,11 @@
         @if ($hubId !== null && $hubId !== '')
             <input type="hidden" name="hub_id" value="{{ $hubId }}">
         @endif
-        @if (request('min_price') !== null && request('min_price') !== '')
-            <input type="hidden" name="min_price" value="{{ request('min_price') }}">
+        @if ($minPrice !== null && $minPrice !== '')
+            <input type="hidden" name="min_price" value="{{ $minPrice }}">
         @endif
-        @if (request('max_price') !== null && request('max_price') !== '')
-            <input type="hidden" name="max_price" value="{{ request('max_price') }}">
+        @if ($maxPrice !== null && $maxPrice !== '')
+            <input type="hidden" name="max_price" value="{{ $maxPrice }}">
         @endif
         @if ($sort !== 'newest')
             <input type="hidden" name="sort" value="{{ $sort }}">
@@ -91,7 +103,7 @@
     {{-- Chip Filter Tipe Listing --}}
     <div class="mb-4 flex flex-wrap gap-2" role="group" aria-label="Filter tipe listing">
         <a
-            href="{{ route('catalog.index', request()->except('page', 'type')) }}"
+            href="{{ route('catalog.index', collect($filterParams)->except('type')->all()) }}"
             dusk="catalog-type-all"
             @class([
                 'inline-flex items-center rounded-full border px-4 py-1.5 text-xs font-semibold transition',
@@ -108,7 +120,7 @@
                 $isActiveType = $type === $listingType->value;
             @endphp
             <a
-                href="{{ route('catalog.index', array_merge(request()->except('page', 'type'), ['type' => $listingType->value])) }}"
+                href="{{ route('catalog.index', array_merge(collect($filterParams)->except('type')->all(), ['type' => $listingType->value])) }}"
                 dusk="catalog-type-{{ strtolower($listingType->value) }}"
                 @class([
                     'inline-flex items-center rounded-full border px-4 py-1.5 text-xs font-semibold transition',
@@ -208,7 +220,7 @@
                     type="number"
                     min="0"
                     name="min_price"
-                    value="{{ request('min_price') }}"
+                    value="{{ $minPrice }}"
                     placeholder="Harga min"
                     dusk="catalog-filter-min-price"
                     class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-2xs placeholder:text-gray-400 focus:border-brand-600"
@@ -222,7 +234,7 @@
                     type="number"
                     min="0"
                     name="max_price"
-                    value="{{ request('max_price') }}"
+                    value="{{ $maxPrice }}"
                     placeholder="Harga maks"
                     dusk="catalog-filter-max-price"
                     class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-2xs placeholder:text-gray-400 focus:border-brand-600"
