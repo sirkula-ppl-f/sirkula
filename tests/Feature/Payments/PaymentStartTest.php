@@ -166,7 +166,7 @@ class PaymentStartTest extends TestCase
             'buyer_id' => $pembeli->id,
             'expires_at' => now()->addHours(2),
         ]);
-        
+
         $this->actingAs($pembeli)->get(route('payments.show', $order->id))
             ->assertOk()
             ->assertSee('data-payment-countdown', false)
