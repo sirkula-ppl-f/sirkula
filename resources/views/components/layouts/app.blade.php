@@ -9,7 +9,8 @@
 
     if ($user) {
         $links[] = ['label' => 'Beranda', 'route' => 'dashboard'];
-        $links[] = ['label' => 'Keranjang', 'route' => 'cart.index'];
+        $links[] = ['label' => 'Katalog', 'route' => 'catalog.index', 'active' => 'catalog.*', 'dusk' => 'nav-catalog'];
+        $links[] = ['label' => 'Keranjang', 'route' => 'cart.index', 'active' => 'cart.*', 'dusk' => 'nav-cart'];
         $links[] = ['label' => 'Profil', 'route' => 'profil.edit', 'active' => 'profil.*', 'dusk' => 'nav-profil'];
         $links[] = ['label' => 'Aktivitas Sirkular', 'route' => 'circular-activity.index', 'active' => 'circular-activity.*', 'dusk' => 'nav-circular-activity'];
         $links[] = ['label' => __('reference-prices.nav.public'), 'route' => 'reference-prices.index', 'active' => 'reference-prices.*', 'dusk' => 'nav-reference-prices'];
@@ -98,6 +99,7 @@
                                         'text-gray-700 hover:bg-gray-50 hover:text-brand-700 md:hover:bg-transparent' => ! request()->routeIs('catalog.*'),
                                     ])
                                     @if (request()->routeIs('catalog.*')) aria-current="page" @endif
+                                    dusk="nav-catalog"
                                 >
                                     Katalog
                                 </a>

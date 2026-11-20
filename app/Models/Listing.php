@@ -49,15 +49,49 @@ class Listing extends Model
     }
 
     /**
+     * Relasi ke jenis material (khusus listing material daur ulang).
+     *
+     * @return BelongsTo<Material, $this>
+     */
+    public function material(): BelongsTo
+    {
+        return $this->belongsTo(Material::class, 'material_id');
+    }
+
+    /**
+     * Relasi ke hub komunitas verifikator.
+     *
+     * @return BelongsTo<Hub, $this>
+     */
+    public function hub(): BelongsTo
+    {
+        return $this->belongsTo(Hub::class, 'hub_id');
+    }
+
+    /**
+     * Relasi ke wilayah listing.
+     *
+     * @return BelongsTo<Region, $this>
+     */
+    public function region(): BelongsTo
+    {
+        return $this->belongsTo(Region::class, 'region_id');
+    }
+
+    /**
      * Aturan listing yang boleh ditampilkan:
-     * disetujui, aktif, stok tersedia, dan penjual aktif.
+     * disetujui, aktif, stok tersedia, penjual aktif, dan hub aktif (bila terhubung ke hub).
      */
     public function scopePurchasable(Builder $query): void
     {
         $query->where('review_status', self::REVIEW_APPROVED)
             ->where('publish_status', self::PUBLISH_ACTIVE)
             ->where('stock', '>', 0)
-            ->whereHas('seller', fn (Builder $seller) => $seller->where('status', 'ACTIVE'));
+            ->whereHas('seller', fn (Builder $seller) => $seller->where('status', 'ACTIVE'))
+            ->where(function (Builder $q) {
+                $q->whereNull('hub_id')
+                    ->orWhereHas('hub', fn (Builder $hub) => $hub->where('status', 'ACTIVE'));
+            });
     }
 
     public function isPurchasable(): bool
@@ -65,7 +99,8 @@ class Listing extends Model
         return $this->review_status === self::REVIEW_APPROVED
             && $this->publish_status === self::PUBLISH_ACTIVE
             && $this->stock > 0
-            && $this->seller?->isActive() === true;
+            && $this->seller?->isActive() === true
+            && ($this->hub_id === null || $this->hub?->status === 'ACTIVE');
     }
 
     /** @return HasMany<ListingImage, $this> */
