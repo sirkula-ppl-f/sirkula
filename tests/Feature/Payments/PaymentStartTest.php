@@ -158,4 +158,19 @@ class PaymentStartTest extends TestCase
 
         (new MidtransGateway)->createSnapTransaction(Order::factory()->create(), 1000);
     }
+
+    public function test_halaman_bayar_menampilkan_timer_dari_server(): void
+    {
+        $pembeli = User::factory()->create();
+        $order = Order::factory()->create([
+            'buyer_id' => $pembeli->id,
+            'expires_at' => now()->addHours(2),
+        ]);
+        
+        $this->actingAs($pembeli)->get(route('payments.show', $order->id))
+            ->assertOk()
+            ->assertSee('data-payment-countdown', false)
+            ->assertSee('data-expires-at="'.$order->expires_at->toIso8601String().'"', false)
+            ->assertSee('data-pay-button', false);
+    }
 }
