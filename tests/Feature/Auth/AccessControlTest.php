@@ -50,7 +50,34 @@ class AccessControlTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->get('/dashboard')
             ->assertOk()
-            ->assertDontSee('href="'.route('admin.dashboard').'"', false);
+            ->assertDontSee('href="'.route('admin.dashboard').'"', false)
+            ->assertDontSee('dusk="admin-sidebar"', false)
+            ->assertSee('href="'.route('cart.index').'"', false);
+    }
+
+    public function test_sidebar_admin_memuat_pengelompokan_modul_dan_menyembunyikan_keranjang_warga(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->get('/admin')
+            ->assertOk()
+            ->assertSee('dusk="admin-sidebar"', false)
+            ->assertSee('Beralih ke tampilan warga')
+            ->assertSee('dusk="nav-guides"', false)
+            ->assertSee('href="'.route('admin.guides.index').'"', false)
+            ->assertSeeInOrder(['Utama', 'Dashboard', 'Data Master', 'Konten & Referensi', 'Pengguna'])
+            ->assertDontSee('href="'.route('cart.index').'"', false);
+
+        // Saat beralih ke tampilan warga (/dashboard), sidebar admin berganti ke navbar warga dengan tombol kembali ke Panel Admin.
+        $this->actingAs($admin)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertDontSee('dusk="admin-sidebar"', false)
+            ->assertSee('dusk="switch-to-admin"', false)
+            ->assertDontSee('href="'.route('cart.index').'"', false)
+            ->assertSee('href="'.route('profil.edit').'"', false)
+            ->assertSee('href="'.route('reference-prices.index').'"', false);
     }
 
     public function test_user_yang_ditangguhkan_saat_sedang_login_dikeluarkan(): void

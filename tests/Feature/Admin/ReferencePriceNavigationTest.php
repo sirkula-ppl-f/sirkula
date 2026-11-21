@@ -23,7 +23,7 @@ class ReferencePriceNavigationTest extends TestCase
     public function test_admin_melihat_tautan_kelola_harga_acuan_setelah_material(): void
     {
         $html = $this->actingAs(User::factory()->admin()->create())
-            ->get(route('dashboard'))
+            ->get(route('admin.dashboard'))
             ->assertOk()
             ->assertSeeInOrder(['Kategori', 'Material', 'Kelola Harga Acuan', 'Kelola Akun'])
             ->getContent();

@@ -45,7 +45,7 @@ class CatalogTest extends DuskTestCase
                 ->assertSee('Rak Buku Kayu 4 Susun');
 
             $browser->loginAs($admin)
-                ->visit(route('admin.dashboard'))
+                ->visit(route('dashboard'))
                 ->assertPresent('@nav-catalog')
                 ->click('@nav-catalog')
                 ->waitForText('Katalog Sirkula')

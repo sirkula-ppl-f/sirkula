@@ -44,9 +44,9 @@ class CatalogTest extends TestCase
         $wargaHtml = $this->actingAs($warga)->get(route('dashboard'))->assertOk()->getContent();
         $this->assertStringContainsString('dusk="nav-catalog"', $wargaHtml);
 
-        // Admin
+        // Admin (di tampilan warga)
         $admin = User::factory()->admin()->create();
-        $adminHtml = $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk()->getContent();
+        $adminHtml = $this->actingAs($admin)->get(route('dashboard'))->assertOk()->getContent();
         $this->assertStringContainsString('dusk="nav-catalog"', $adminHtml);
     }
 
