@@ -6,7 +6,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\User;
 use Facebook\WebDriver\Chrome\ChromeDevToolsDriver;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
@@ -15,7 +15,7 @@ use Tests\DuskTestCase;
  */
 class CircularActivityBrowserTest extends DuskTestCase
 {
-    use DatabaseMigrations;
+    use DatabaseTruncation;
 
     public function test_tamu_diarahkan_ke_login_saat_membuka_aktivitas_sirkular(): void
     {
