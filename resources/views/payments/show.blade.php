@@ -31,10 +31,16 @@
         </p>
 
         <div class="mt-6">
+        @if ($order->expires_at && $order->isPayable())
+    <p class="mb-4 text-sm text-gray-700" data-payment-countdown data-expires-at="{{ $order->expires_at->toIso8601String() }}">
+        Sisa waktu bayar:
+        <span class="font-semibold text-amber-800" data-countdown-text>--:--:--</span>
+    </p>
+@endif
             @if ($order->isPayable())
                 <form method="POST" action="{{ route('payments.store', $order->id) }}" data-submit-once>
                     @csrf
-                    <x-button dusk="pay-button">Bayar via Midtrans (Sandbox)</x-button>
+                    <x-button dusk="pay-button" data-pay-button>Bayar via Midtrans (Sandbox)</x-button>
                 </form>
             @else
                 <p class="text-sm text-gray-700" dusk="not-payable">Pesanan ini tidak dapat dibayar lagi.</p>
