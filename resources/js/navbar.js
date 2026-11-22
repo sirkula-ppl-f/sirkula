@@ -92,16 +92,11 @@ function initCatalogFilter() {
 
     const hasActive = toggle.getAttribute('data-filter-active') === 'true';
     const chevron = toggle.querySelector('[data-filter-chevron]');
-    const stateLabel = toggle.querySelector('[data-filter-state-label]');
 
     function setExpanded(expanded) {
         toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
         panel.classList.toggle('max-md:hidden', !expanded);
         chevron?.classList.toggle('rotate-180', expanded);
-
-        if (stateLabel) {
-            stateLabel.textContent = expanded ? 'Tutup' : 'Buka';
-        }
     }
 
     toggle.hidden = false;
