@@ -287,14 +287,14 @@ class ReferencePriceTest extends DuskTestCase
             $browser->loginAs($this->admin);
 
             $this->emulasi360($browser, function () use ($browser) {
-                // Menu admin adalah menu terpanjang (termasuk Hub).
+                // Di Panel Admin (/admin), menu seluler menampilkan sidebar admin dan tombol beralih ke tampilan warga.
                 $browser->visit('/admin')
                     ->assertVisible('@nav-toggle')
                     ->assertMissing('@nav-reference-prices')
                     ->click('@nav-toggle')
                     ->assertAttribute('@nav-toggle', 'aria-expanded', 'true');
 
-                $this->assertTautanMenuTerlihat($browser, 'nav-reference-prices', route('reference-prices.index'));
+                $this->assertTautanMenuTerlihat($browser, 'switch-to-warga', route('dashboard'));
                 $this->assertTautanMenuTerlihat($browser, 'nav-admin-reference-prices', route('admin.reference-prices.index'));
                 $this->assertTautanMenuTerlihat($browser, 'nav-hubs', route('admin.hubs.index'));
                 $this->assertTautanMenuTerlihat($browser, 'nav-users', route('admin.users.index'));
@@ -304,12 +304,19 @@ class ReferencePriceTest extends DuskTestCase
                     ->waitForLocation('/admin/harga-acuan')
                     ->click('@nav-toggle')
                     ->assertAttribute('@nav-admin-reference-prices', 'aria-current', 'page')
-                    ->assertAttributeMissing('@nav-reference-prices', 'aria-current')
-                    ->click('@nav-reference-prices')
+                    ->assertMissing('@nav-reference-prices')
+                    ->click('@switch-to-warga')
+                    ->waitForLocation('/dashboard')
+                    ->click('@nav-toggle');
+
+                $this->assertTautanMenuTerlihat($browser, 'nav-reference-prices', route('reference-prices.index'));
+                $this->assertTautanMenuTerlihat($browser, 'switch-to-admin', route('admin.dashboard'));
+
+                $browser->click('@nav-reference-prices')
                     ->waitForLocation('/harga-acuan')
                     ->click('@nav-toggle')
                     ->assertAttribute('@nav-reference-prices', 'aria-current', 'page')
-                    ->assertAttributeMissing('@nav-admin-reference-prices', 'aria-current');
+                    ->assertMissing('@nav-admin-reference-prices');
 
                 $this->assertTanpaGeserHorizontal($browser, 'daftar harga acuan dengan menu seluler terbuka');
             });

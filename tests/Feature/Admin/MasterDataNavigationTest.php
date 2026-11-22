@@ -26,9 +26,9 @@ class MasterDataNavigationTest extends TestCase
     public function test_admin_melihat_tautan_kategori_dan_material_di_navbar(): void
     {
         $html = $this->actingAs(User::factory()->admin()->create())
-            ->get(route('dashboard'))
+            ->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSeeInOrder(['Beranda', 'Admin', 'Kategori', 'Material'])
+            ->assertSeeInOrder(['Beralih ke tampilan warga', 'Dashboard', 'Kategori', 'Material'])
             ->getContent();
 
         $kategori = $this->tagTautan($html, 'dusk="nav-categories"');
@@ -39,9 +39,9 @@ class MasterDataNavigationTest extends TestCase
         $this->assertStringNotContainsString('aria-current', $kategori);
         $this->assertStringNotContainsString('aria-current', $material);
 
-        // Tautan lama tanpa key 'active' tetap memakai 'route'. Logo juga mengarah ke dashboard, jadi cek semua tag.
-        preg_match_all('/<a\b[^>]*href="'.preg_quote(route('dashboard'), '/').'"[^>]*>/', $html, $cocok);
-        $this->assertCount(1, array_filter($cocok[0], fn (string $tag) => str_contains($tag, 'aria-current="page"')), 'Tautan Beranda harus aktif di dashboard.');
+        // Tautan lama tanpa key 'active' tetap memakai 'route'.
+        preg_match_all('/<a\b[^>]*href="'.preg_quote(route('admin.dashboard'), '/').'"[^>]*>/', $html, $cocok);
+        $this->assertCount(1, array_filter($cocok[0], fn (string $tag) => str_contains($tag, 'aria-current="page"')), 'Tautan Dashboard harus aktif di halaman admin.');
 
         // Tombol toggle menu seluler terhubung ke panel navigasi dan disembunyikan secara bawaan (progressive enhancement).
         $this->assertSame(1, preg_match('/<button\b[^>]*dusk="nav-toggle"[^>]*>/', $html, $toggle));

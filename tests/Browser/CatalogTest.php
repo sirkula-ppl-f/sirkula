@@ -6,6 +6,7 @@ use App\Enums\ListingType;
 use App\Models\Category;
 use App\Models\Listing;
 use App\Models\User;
+use Facebook\WebDriver\Chrome\ChromeDevToolsDriver;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
@@ -45,7 +46,7 @@ class CatalogTest extends DuskTestCase
                 ->assertSee('Rak Buku Kayu 4 Susun');
 
             $browser->loginAs($admin)
-                ->visit(route('admin.dashboard'))
+                ->visit(route('dashboard'))
                 ->assertPresent('@nav-catalog')
                 ->click('@nav-catalog')
                 ->waitForText('Katalog Sirkula')
@@ -96,6 +97,40 @@ class CatalogTest extends DuskTestCase
                 ->assertSee('Informasi produk')
                 ->assertSee('Sepeda Lipat Bekas')
                 ->assertSee('Stok tersedia');
+        });
+    }
+
+    public function test_mobile_catalog_filter_panel_toggles_and_has_no_horizontal_overflow_at_360px(): void
+    {
+        Listing::factory()->create(['title' => 'Sepeda Lipat Bekas']);
+
+        $this->browse(function (Browser $browser) {
+            $devTools = new ChromeDevToolsDriver($browser->driver);
+            $devTools->execute('Emulation.setDeviceMetricsOverride', [
+                'width' => 360,
+                'height' => 800,
+                'deviceScaleFactor' => 1,
+                'mobile' => true,
+            ]);
+
+            try {
+                $browser->visit(route('catalog.index'))
+                    ->assertVisible('@catalog-filter-toggle')
+                    ->assertAttribute('@catalog-filter-toggle', 'aria-expanded', 'false')
+                    ->assertMissing('@catalog-filter-category')
+                    ->click('@catalog-filter-toggle')
+                    ->assertAttribute('@catalog-filter-toggle', 'aria-expanded', 'true')
+                    ->assertVisible('@catalog-filter-category');
+
+                [$scrollWidth, $innerWidth] = $browser->script(
+                    'return [document.documentElement.scrollWidth, window.innerWidth];'
+                )[0];
+
+                $this->assertLessThanOrEqual(360, $innerWidth, 'Viewport tes harus selebar 360px.');
+                $this->assertLessThanOrEqual($innerWidth, $scrollWidth, "Katalog bergeser horizontal ({$scrollWidth}px > {$innerWidth}px).");
+            } finally {
+                $devTools->execute('Emulation.clearDeviceMetricsOverride');
+            }
         });
     }
 }

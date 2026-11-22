@@ -97,15 +97,18 @@ class ReferencePricePublicNavigationTest extends TestCase
 
     public function test_admin_melihat_tautan_publik_dan_tautan_kelola(): void
     {
-        $html = $this->actingAs(User::factory()->admin()->create())->get(route('dashboard'))->assertOk()->getContent();
+        $admin = User::factory()->admin()->create();
 
-        $this->assertTautanPublik($html, aktif: false);
-        $this->assertStringContainsString('href="'.route('admin.reference-prices.index').'"', $this->tagTautan($html, 'nav-admin-reference-prices'));
+        // Di tampilan warga (/dashboard), admin melihat tautan Harga Acuan publik dan tombol ke Panel Admin.
+        $wargaHtml = $this->actingAs($admin)->get(route('dashboard'))->assertOk()->getContent();
+        $this->assertTautanPublik($wargaHtml, aktif: false);
+        $this->assertLessThan($this->posisi($wargaHtml, 'href="'.route('admin.dashboard').'"'), $this->posisi($wargaHtml, 'dusk="nav-reference-prices"'));
 
-        // Tautan publik sebelum blok admin; urutan tautan admin (termasuk Hub) tidak berubah.
-        $this->assertLessThan($this->posisi($html, 'href="'.route('admin.dashboard').'"'), $this->posisi($html, 'dusk="nav-reference-prices"'));
-        $this->assertLessThan($this->posisi($html, 'dusk="nav-admin-reference-prices"'), $this->posisi($html, 'dusk="nav-hubs"'));
-        $this->assertLessThan($this->posisi($html, 'dusk="nav-users"'), $this->posisi($html, 'dusk="nav-admin-reference-prices"'));
+        // Di Panel Admin (/admin), admin melihat tautan Kelola Harga Acuan di sidebar sesuai urutan seksi.
+        $adminHtml = $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk()->getContent();
+        $this->assertStringContainsString('href="'.route('admin.reference-prices.index').'"', $this->tagTautan($adminHtml, 'nav-admin-reference-prices'));
+        $this->assertLessThan($this->posisi($adminHtml, 'dusk="nav-admin-reference-prices"'), $this->posisi($adminHtml, 'dusk="nav-hubs"'));
+        $this->assertLessThan($this->posisi($adminHtml, 'dusk="nav-users"'), $this->posisi($adminHtml, 'dusk="nav-admin-reference-prices"'));
     }
 
     public function test_di_halaman_admin_hanya_tautan_kelola_yang_aktif(): void
@@ -115,14 +118,14 @@ class ReferencePricePublicNavigationTest extends TestCase
         foreach (['admin.reference-prices.index', 'admin.reference-prices.create'] as $route) {
             $html = $this->actingAs($admin)->get(route($route))->assertOk()->getContent();
 
-            $this->assertTautanPublik($html, aktif: false);
+            $this->assertStringNotContainsString('dusk="nav-reference-prices"', $html);
             $this->assertStringContainsString('aria-current="page"', $this->tagTautan($html, 'nav-admin-reference-prices'));
         }
 
         $html = $this->actingAs($admin)->get(route('reference-prices.index'))->assertOk()->getContent();
 
         $this->assertTautanPublik($html, aktif: true);
-        $this->assertStringNotContainsString('aria-current', $this->tagTautan($html, 'nav-admin-reference-prices'));
+        $this->assertStringNotContainsString('dusk="nav-admin-reference-prices"', $html);
     }
 
     public function test_navbar_katalog_menaut_ke_halaman_harga_acuan(): void
