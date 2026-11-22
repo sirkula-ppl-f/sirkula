@@ -11,8 +11,16 @@
         </a>
 
         <main id="konten" class="flex min-h-screen flex-col items-center justify-center px-4 py-10">
-            <a href="{{ url('/') }}" class="mb-6 text-2xl font-semibold text-brand-700">
-                {{ config('app.name') }}
+            <a href="{{ url('/') }}" class="mb-6 inline-flex items-center gap-2.5 text-2xl font-semibold text-brand-700">
+                <img
+                    src="{{ asset('images/sirkula-icon.png') }}"
+                    alt=""
+                    width="36"
+                    height="36"
+                    class="h-9 w-9 shrink-0 object-contain"
+                    aria-hidden="true"
+                >
+                <span>{{ config('app.name') }}</span>
             </a>
 
             <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200 sm:p-8">

@@ -83,9 +83,14 @@
                             dusk="nav-brand"
                             class="inline-flex items-center gap-2.5 text-xl font-bold tracking-tight text-gray-900"
                         >
-                            <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-700 text-sm font-bold text-white shadow-2xs">
-                                S
-                            </span>
+                            <img
+                                src="{{ asset('images/sirkula-icon.png') }}"
+                                alt=""
+                                width="28"
+                                height="28"
+                                class="h-7 w-7 shrink-0 object-contain"
+                                aria-hidden="true"
+                            >
                             <span>{{ config('app.name') }}</span>
                         </a>
                     </div>
@@ -246,9 +251,17 @@
                     <a
                         href="{{ url('/') }}"
                         dusk="nav-brand"
-                        class="text-lg font-semibold text-brand-700"
+                        class="inline-flex items-center gap-2 text-lg font-semibold text-brand-700"
                     >
-                        {{ config('app.name') }}
+                        <img
+                            src="{{ asset('images/sirkula-icon.png') }}"
+                            alt=""
+                            width="28"
+                            height="28"
+                            class="h-7 w-7 shrink-0 object-contain"
+                            aria-hidden="true"
+                        >
+                        <span>{{ config('app.name') }}</span>
                     </a>
 
                     {{-- Tombol buka/tutup menu seluler (muncul saat JS aktif di layar < md) --}}

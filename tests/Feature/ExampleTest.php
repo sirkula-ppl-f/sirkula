@@ -44,4 +44,31 @@ class ExampleTest extends TestCase
             ->assertSee('Buka Beranda')
             ->assertDontSee('Daftar Sebagai Warga');
     }
+
+    public function test_ikon_aplikasi_dan_favicon_tampil_di_semua_layout(): void
+    {
+        $iconUrl = asset('images/sirkula-icon.png');
+        $faviconUrl = asset('favicon.ico');
+        $appleIconUrl = asset('apple-touch-icon.png');
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('href="'.$iconUrl.'"', false)
+            ->assertSee('href="'.$faviconUrl.'"', false)
+            ->assertSee('href="'.$appleIconUrl.'"', false)
+            ->assertSee('src="'.$iconUrl.'"', false);
+
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertSee('href="'.$iconUrl.'"', false)
+            ->assertSee('src="'.$iconUrl.'"', false);
+
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('href="'.$iconUrl.'"', false)
+            ->assertSee('src="'.$iconUrl.'"', false);
+    }
 }
