@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Enums\ListingType;
-use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\User;
@@ -350,7 +349,7 @@ class CircularActivityService
     ): void {
         $userId = $user->getKey();
 
-        $query->where("{$ordersTable}.status", OrderStatus::Paid->value);
+        $query->where("{$ordersTable}.status", Order::STATUS_PAID);
 
         if ($role === self::ROLE_SELLER) {
             $query->where("{$ordersTable}.seller_id", $userId);
