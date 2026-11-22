@@ -360,18 +360,53 @@ php artisan db:seed --class=ReferencePriceDemoSeeder
 - Tidak ada ubah atau hapus. Koreksi dilakukan dengan menerbitkan entri baru (boleh dengan tanggal berlaku yang sama; entri yang terbit paling akhir yang dipakai).
 - Lebar label sumbu harga pada grafik diperkirakan dari jumlah karakter, bukan diukur dari font, jadi ruangnya sengaja dilebihkan.
 
-## Kontrak status pesanan (orders)
+## Kontrak status pesanan (`orders`) & item (`order_items`)
 
 | Status | Yang boleh mengubah | Keterangan |
 |---|---|---|
-| PENDING_PAYMENT | Checkout (PBI-12) | Pesanan dibuat, stok direservasi |
-| EXPIRED | Checkout (PBI-12) | Lewat 24 jam, stok dilepas |
-| CANCELLED | Checkout (PBI-12) | Dibatalkan pembeli, stok dilepas |
-| PAID | Pembayaran (PBI-13) | Notifikasi settlement terverifikasi |
-| PAYMENT_REVIEW | Pembayaran (PBI-13) | Pembayaran datang setelah pesanan tidak bisa dibayar lagi |
+| `PENDING_PAYMENT` | Checkout (PBI-12) | Pesanan dibuat, stok direservasi |
+| `EXPIRED` | Checkout (PBI-12) | Lewat 24 jam, stok dilepas |
+| `CANCELLED` | Checkout (PBI-12) | Dibatalkan pembeli, stok dilepas |
+| `PAID` | Pembayaran (PBI-13) | Notifikasi settlement terverifikasi |
+| `PAYMENT_REVIEW` | Pembayaran (PBI-13) | Pembayaran datang setelah pesanan tidak bisa dibayar lagi |
 
-- Hanya `PaymentStatusResolver` yang boleh menetapkan PAID.
-- PAID bersifat final.
-- Kolom orders: order_number, buyer_id, seller_id, total, status, expires_at, paid_at.
-- Perubahan kolom berikutnya lewat migrasi baru.
-- order_items dibuat Rasyid (PBI-12) lewat migrasi terpisah.
+- Hanya `PaymentStatusResolver` yang boleh menetapkan `PAID`.
+- `PAID` bersifat final.
+- Gunakan konstanta `Order::STATUS_*` di `App\Models\Order` sebagai satu-satunya acuan status pesanan.
+- Kolom `orders` (dibuat PBI-13 di `2026_11_15_000000_create_orders_table.php`): `order_number`, `buyer_id`, `seller_id`, `total`, `status`, `expires_at`, `paid_at`.
+- Perubahan kolom `orders` berikutnya (termasuk `checkout_key` bila diperlukan PBI-12) harus lewat migrasi baru dengan guard `Schema::hasColumn`.
+
+### Kontrak `order_items` & panduan migrasi PBI-12
+
+Tabel `order_items` sudah disiapkan lebih dulu oleh stub PBI-20 (`2026_11_17_000000_create_orders_table_stub.php`) dan **jangan dihapus** karena mungkin sudah tereksekusi di database anggota lain.
+
+- Kolom wajib yang dipakai `OrderItem` dan `CircularActivityService` (PBI-20 / FR-022):
+  - `order_id` (`foreignId` ke `orders`, `cascadeOnDelete`)
+  - `listing_id` (`unsignedBigInteger`, **wajib `nullable`**; FK ke `listings` ditunda atau dijaga karena stub `listings` masih aktif dan factory/seeder memakai `null`)
+  - `title_snapshot` (`string`)
+  - `type_snapshot` (`string(20)`, nilai mengikuti `App\Enums\ListingType`: `PRELOVED`, `RECYCLABLE`, `UPCYCLE`)
+  - `unit_price` (`unsignedBigInteger`)
+  - `weight_per_unit_snapshot` (`decimal(10, 2)`, **wajib `nullable`**: berat tidak diketahui ≠ `0`)
+  - `quantity` (`unsignedInteger`)
+  - `subtotal` (`unsignedBigInteger`)
+- Migrasi resmi PBI-12 **tidak boleh** memakai `Schema::create('order_items', ...)` langsung tanpa guard karena akan gagal `table already exists`. Gunakan pola idempoten berikut agar aman untuk DB yang sudah maupun belum menjalankan stub:
+
+```php
+if (! Schema::hasTable('order_items')) {
+    Schema::create('order_items', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
+        $table->unsignedBigInteger('listing_id')->nullable()->index();
+        $table->string('title_snapshot');
+        $table->string('type_snapshot', 20)->index();
+        $table->unsignedBigInteger('unit_price')->default(0);
+        $table->decimal('weight_per_unit_snapshot', 10, 2)->nullable();
+        $table->unsignedInteger('quantity')->default(1);
+        $table->unsignedBigInteger('subtotal')->default(0);
+        $table->timestamps();
+    });
+}
+
+// Tambahan kolom/indeks khusus PBI-12 (jika ada) dijaga dengan Schema::hasColumn / Schema::hasIndex.
+// Di down(), hanya drop kolom/indeks tambahan milik PBI-12 (jangan drop tabel order_items milik stub).
+```
