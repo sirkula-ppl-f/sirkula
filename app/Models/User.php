@@ -115,4 +115,24 @@ class User extends Authenticatable
     {
         return $this->hasMany(AuditLog::class);
     }
+
+    /**
+     * Pesanan yang dibuat user ini sebagai pembeli.
+     *
+     * @return HasMany<Order, $this>
+     */
+    public function buyerOrders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'buyer_id');
+    }
+
+    /**
+     * Pesanan yang diterima user ini sebagai penjual.
+     *
+     * @return HasMany<Order, $this>
+     */
+    public function sellerOrders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'seller_id');
+    }
 }
