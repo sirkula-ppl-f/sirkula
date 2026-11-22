@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Database\Factories\OrderFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
@@ -40,6 +42,8 @@ class Order extends Model
     }
 
     /**
+     * Pembeli yang membuat pesanan.
+     *
      * @return BelongsTo<User, $this>
      */
     public function buyer(): BelongsTo
@@ -48,6 +52,8 @@ class Order extends Model
     }
 
     /**
+     * Penjual pemilik barang pada pesanan.
+     *
      * @return BelongsTo<User, $this>
      */
     public function seller(): BelongsTo
@@ -56,11 +62,47 @@ class Order extends Model
     }
 
     /**
+     * Daftar item snapshot di dalam pesanan.
+     *
+     * @return HasMany<OrderItem, $this>
+     */
+    public function items(): HasMany
+    {
+        return $this->hasMany(OrderItem::class, 'order_id');
+    }
+
+    /**
      * @return HasOne<Payment, $this>
      */
     public function payment(): HasOne
     {
         return $this->hasOne(Payment::class);
+    }
+
+    /**
+     * Hanya pesanan yang sudah berstatus PAID (Lunas).
+     */
+    public function scopePaid(Builder $query): void
+    {
+        $query->where('status', self::STATUS_PAID);
+    }
+
+    /**
+     * Pesanan yang melibatkan pengguna tertentu (sebagai pembeli atau penjual).
+     */
+    public function scopeForParticipant(Builder $query, User|int $user): void
+    {
+        $userId = $user instanceof User ? $user->getKey() : $user;
+
+        $query->where(function (Builder $q) use ($userId) {
+            $q->where('buyer_id', $userId)
+                ->orWhere('seller_id', $userId);
+        });
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->status === self::STATUS_PAID;
     }
 
     /** Pesanan masih menunggu pembayaran dan belum melewati batas waktu. */

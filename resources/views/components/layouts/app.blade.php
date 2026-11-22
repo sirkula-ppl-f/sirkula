@@ -19,6 +19,7 @@
         }
 
         $links[] = ['label' => 'Profil', 'route' => 'profil.edit', 'active' => 'profil.*', 'dusk' => 'nav-profil'];
+        $links[] = ['label' => 'Aktivitas Sirkular', 'route' => 'circular-activity.index', 'active' => 'circular-activity.*', 'dusk' => 'nav-circular-activity'];
         $links[] = ['label' => __('reference-prices.nav.public'), 'route' => 'reference-prices.index', 'active' => 'reference-prices.*', 'dusk' => 'nav-reference-prices'];
 
         if ($isAdmin) {
