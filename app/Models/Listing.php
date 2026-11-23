@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ListingModerationStatus;
 use Database\Factories\ListingFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -22,11 +23,37 @@ class Listing extends Model
     /** @use HasFactory<ListingFactory> */
     use HasFactory;
 
+    public const REVIEW_DRAFT = 'DRAFT';
+
+    public const REVIEW_PENDING = 'PENDING_REVIEW';
+
     public const REVIEW_APPROVED = 'APPROVED';
 
     public const PUBLISH_ACTIVE = 'ACTIVE';
 
     protected $guarded = [];
+
+    /**
+     * Nilai default model, disamakan dengan default kolom di database (PBI-06), supaya listing
+     * yang baru dibuat langsung punya status moderasi tanpa perlu dimuat ulang.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'moderation_status' => 'VISIBLE',
+    ];
+
+    /**
+     * moderation_status hanya boleh diubah ListingModerationService (PBI-06).
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'moderation_status' => ListingModerationStatus::class,
+        ];
+    }
 
     /**
      * Relasi ke penjual.
@@ -80,11 +107,13 @@ class Listing extends Model
 
     /**
      * Aturan listing yang boleh ditampilkan:
-     * disetujui, aktif, stok tersedia, penjual aktif, dan hub aktif (bila terhubung ke hub).
+     * tidak dinonaktifkan admin (PBI-06), disetujui, aktif, stok tersedia, penjual aktif,
+     * dan hub aktif (bila terhubung ke hub).
      */
     public function scopePurchasable(Builder $query): void
     {
-        $query->where('review_status', self::REVIEW_APPROVED)
+        $query->where('moderation_status', ListingModerationStatus::Visible->value)
+            ->where('review_status', self::REVIEW_APPROVED)
             ->where('publish_status', self::PUBLISH_ACTIVE)
             ->where('stock', '>', 0)
             ->whereHas('seller', fn (Builder $seller) => $seller->where('status', 'ACTIVE'))
@@ -96,7 +125,8 @@ class Listing extends Model
 
     public function isPurchasable(): bool
     {
-        return $this->review_status === self::REVIEW_APPROVED
+        return $this->moderation_status === ListingModerationStatus::Visible
+            && $this->review_status === self::REVIEW_APPROVED
             && $this->publish_status === self::PUBLISH_ACTIVE
             && $this->stock > 0
             && $this->seller?->isActive() === true
@@ -107,5 +137,17 @@ class Listing extends Model
     public function images(): HasMany
     {
         return $this->hasMany(ListingImage::class);
+    }
+
+    /**
+     * Riwayat moderasi admin (PBI-06), terbaru di atas.
+     *
+     * @return HasMany<ListingModeration, $this>
+     */
+    public function moderations(): HasMany
+    {
+        return $this->hasMany(ListingModeration::class)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
     }
 }
