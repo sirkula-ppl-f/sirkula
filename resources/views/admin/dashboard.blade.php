@@ -1,23 +1,3 @@
-@php
-    $stats = rescue(fn () => [
-        'categories_active' => \App\Models\Category::where('is_active', true)->count(),
-        'materials_active' => \App\Models\Material::where('is_active', true)->count(),
-        'hubs_active' => \App\Models\Hub::where('status', 'ACTIVE')->count(),
-        'reference_prices_total' => \App\Models\ReferencePrice::count(),
-        'guides_published' => \App\Models\Guide::where('status', 'published')->count(),
-        'users_total' => \App\Models\User::count(),
-        'users_suspended' => \App\Models\User::where('status', \App\Enums\UserStatus::Suspended)->count(),
-    ], [
-        'categories_active' => 0,
-        'materials_active' => 0,
-        'hubs_active' => 0,
-        'reference_prices_total' => 0,
-        'guides_published' => 0,
-        'users_total' => 0,
-        'users_suspended' => 0,
-    ], false);
-@endphp
-
 <x-layouts.app title="Admin">
     {{-- Banner sapaan & pintasan aksi cepat --}}
     <div class="mb-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
