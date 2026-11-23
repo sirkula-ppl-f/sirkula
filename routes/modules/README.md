@@ -410,3 +410,86 @@ if (! Schema::hasTable('order_items')) {
 // Tambahan kolom/indeks khusus PBI-12 (jika ada) dijaga dengan Schema::hasColumn / Schema::hasIndex.
 // Di down(), hanya drop kolom/indeks tambahan milik PBI-12 (jangan drop tabel order_items milik stub).
 ```
+
+## Moderasi listing (PBI-06)
+
+Admin menonaktifkan atau memulihkan visibilitas listing bermasalah dengan alasan wajib (FR-020). Setiap aksi tercatat di riwayat moderasi dan di `audit_logs` (FR-021).
+
+### Kolom `listings.moderation_status`
+
+| Nilai | Enum `App\Enums\ListingModerationStatus` | Arti |
+|---|---|---|
+| `VISIBLE` | `Visible` (default) | Admin tidak membatasi listing ini. Listing tampil di katalog bila syarat lain terpenuhi |
+| `HIDDEN` | `Hidden` | Dinonaktifkan admin. Tidak tampil di katalog, detailnya 404, tidak bisa dimasukkan ke keranjang |
+
+- Terpisah dari `review_status` (verifikasi hub) dan `publish_status` (publikasi penjual). Moderasi tidak pernah mengubah kedua kolom itu, dan kedua kolom itu tidak dipakai untuk moderasi.
+- **Hanya `App\Services\ListingModerationService` yang boleh mengubah `moderation_status`.** Model `Listing` meng-cast kolom ini ke enum dan memberi default `VISIBLE` di model, sama dengan default kolom.
+- Konstanta baru di `Listing`: `REVIEW_DRAFT` (`DRAFT`) dan `REVIEW_PENDING` (`PENDING_REVIEW`).
+
+### Aturan tayang (purchasable)
+
+`Listing::scopePurchasable()` dan `$listing->isPurchasable()` sekarang mensyaratkan: `moderation_status = VISIBLE`, `review_status = APPROVED`, `publish_status = ACTIVE`, `stock > 0`, penjual `ACTIVE`, dan hub `ACTIVE` (bila listing terhubung ke hub).
+
+Katalog, detail katalog, keranjang, dan checkout memakai aturan ini, jadi listing `HIDDEN` otomatis hilang tanpa perubahan di modul itu. Untuk menampilkan **alasan** listing tidak tayang, pakai `ListingModerationService::visibilityBlockers($listing)`: daftar key lang `listing-moderation.blockers.*` dengan urutan sama seperti syarat di atas. Daftar itu kosong jika dan hanya jika `isPurchasable()` bernilai true.
+
+### Service
+
+```php
+use App\Services\ListingModerationService;
+use App\Support\RequestId;
+
+$moderasi = app(ListingModerationService::class);
+
+$moderasi->deactivate($listing, $admin, $alasan, RequestId::for($request)); // VISIBLE → HIDDEN
+$moderasi->restore($listing, $admin, $alasan, RequestId::for($request));    // HIDDEN → VISIBLE
+$moderasi->visibilityBlockers($listing);                                    // list<string> key lang
+```
+
+- Hanya `moderation_status` yang diubah. Tidak ada penulisan ke `orders`, `order_items`, `payments`, `payment_events`, atau `cart_items`, dan tidak ada yang dihapus. Pesanan lama tetap utuh, dan notifikasi pembayaran untuk pesanan yang sedang berjalan tetap diproses sampai lunas.
+- Berjalan di `DB::transaction` dengan `lockForUpdate` pada baris listing.
+- Ditolak dengan `ListingModerationException` (pesan dari lang) bila listing berstatus `DRAFT`, atau statusnya sudah sama dengan tujuan (misalnya form lama di tab lain). Melempar `AuthorizationException` bila user bukan admin.
+- **Pemulihan tidak melewati verifikasi hub:** listing yang `review_status`-nya bukan `APPROVED` tetap tidak tayang setelah dipulihkan.
+
+### Riwayat `listing_moderations` (append-only)
+
+| Kolom | Isi |
+|---|---|
+| `listing_id` | FK `listings`, `restrictOnDelete` |
+| `action` | `DEACTIVATE` atau `RESTORE` (`App\Enums\ListingModerationAction`) |
+| `reason` | alasan admin, wajib, 10–500 karakter. Hanya untuk admin; tidak pernah tampil di halaman publik atau ke penjual |
+| `admin_id` | FK `users`, `restrictOnDelete` |
+| `request_id` | ID permintaan (`App\Support\RequestId`), maks. 64 karakter |
+| `review_status_snapshot`, `publish_status_snapshot` | status listing saat aksi dilakukan, sebagai konteks |
+| `created_at` | UTC, ditampilkan dalam WIB. Tidak ada `updated_at` |
+
+Index: `(listing_id, created_at)` dan `(action, created_at)`. `$listing->moderations()` urut terbaru di atas.
+
+- Model `ListingModeration` melempar `ListingModerationImmutableException` pada event `updating` dan `deleting`. Tidak ada route, method, atau tombol untuk mengubah atau menghapus riwayat.
+- **Keterbatasan:** sama seperti harga acuan, update/delete massal lewat query builder (`ListingModeration::where(...)->update()`, `DB::table('listing_moderations')`) tidak memicu event model, jadi tidak terjaga. Jangan dipakai.
+- Karena FK `restrict`, **listing yang punya riwayat moderasi tidak bisa dihapus**, begitu juga akun admin pelakunya.
+
+### Audit (FR-021)
+
+- Aksi yang berhasil menulis satu baris `listing_moderations` dan satu baris `audit_logs` di transaksi yang sama: `action` `LISTING_DEACTIVATED`/`LISTING_RESTORED`, `entity_type` `App\Models\Listing`, `entity_id`, `result` `SUCCESS`, `reason`, `ip_address`, `user_agent`, `created_at`.
+- Aksi yang ditolak aturan bisnis menulis `audit_logs` dengan `result` `REJECTED` dan `reason` berisi alasan penolakan, tanpa baris riwayat. Error validasi form tidak dicatat.
+- `audit_logs` (PBI-19) belum punya kolom request ID, jadi request ID hanya tersimpan di `listing_moderations`.
+- `App\Support\RequestId::for($request)`: memakai header `X-Request-Id` bila cocok `[A-Za-z0-9._-]{8,64}`, selain itu membuat UUID baru. Nilainya sama sepanjang satu request.
+
+### Kewajiban modul lain
+
+- **PBI-03 (verifikasi hub):** jangan mengubah `moderation_status` saat approve atau reject. Listing `HIDDEN` tetap tidak tayang walaupun di-approve hub; hanya admin yang bisa memulihkannya. Label status moderasi di antrean verifikasi belum dibuat (di luar cakupan PBI-06).
+- **PBI-07/08 (listing):** jangan drop atau buat ulang tabel `listings`, karena ada FK dari `listing_moderations` dan `listing_images`. Ubah kolom lewat migrasi baru. Jangan pernah mengisi `moderation_status` dari input penjual.
+- **PBI-12 (checkout):** cek ulang `isPurchasable()` **di dalam lock** (`lockForUpdate` pada baris listing) saat checkout, supaya listing yang baru dinonaktifkan tidak bisa dipesan.
+- **PBI-14/15 (riwayat pesanan dan rekonsiliasi):** tampilkan pesanan dari snapshot `order_items`, dan **jangan** memfilternya dengan `purchasable`. Pesanan atas listing `HIDDEN` tetap harus tampil dan diproses.
+- **PBI-21 (dashboard):** jumlah listing aktif = `Listing::purchasable()->count()`. Jumlah listing yang sedang dinonaktifkan admin = `Listing::where('moderation_status', ListingModerationStatus::Hidden)->count()`.
+- **Semua modul:** jangan menulis ke `listing_moderations` (insert, update, delete), dan jangan mengubah `moderation_status` di luar `ListingModerationService`.
+
+### Factory untuk tes
+
+```php
+Listing::factory()->dinonaktifkanAdmin()->create();                            // HIDDEN, tanpa baris riwayat
+ListingModeration::factory()->forListing($listing)->byAdmin($admin)->create(); // riwayat penonaktifan
+ListingModeration::factory()->forListing($listing)->restore()->create();       // riwayat pemulihan
+```
+
+Factory riwayat tidak mengubah status listing. Untuk alur sungguhan pakai `ListingModerationService`.
