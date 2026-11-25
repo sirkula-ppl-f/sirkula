@@ -7,6 +7,7 @@
         'guides_published' => \App\Models\Guide::where('status', 'published')->count(),
         'users_total' => \App\Models\User::count(),
         'users_suspended' => \App\Models\User::where('status', \App\Enums\UserStatus::Suspended)->count(),
+        'listings_hidden' => \App\Models\Listing::where('moderation_status', \App\Enums\ListingModerationStatus::Hidden->value)->count(),
     ], [
         'categories_active' => 0,
         'materials_active' => 0,
@@ -15,6 +16,7 @@
         'guides_published' => 0,
         'users_total' => 0,
         'users_suspended' => 0,
+        'listings_hidden' => 0,
     ], false);
 @endphp
 
@@ -243,6 +245,39 @@
             </div>
             <span class="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-brand-700">
                 Buka Panduan <span aria-hidden="true" class="transition-transform group-hover:translate-x-0.5">&rarr;</span>
+            </span>
+        </a>
+
+        <a
+            href="{{ route('admin.listings.index') }}"
+            dusk="listing-moderation-card"
+            class="group flex flex-col justify-between rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200 transition hover:shadow-md hover:ring-brand-600"
+        >
+            <div>
+                <div class="flex items-start justify-between gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700 ring-1 ring-brand-100">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                        </svg>
+                    </span>
+                    <span
+                        @class([
+                            'rounded-full px-2.5 py-0.5 text-xs font-medium',
+                            'bg-amber-50 text-amber-800 ring-1 ring-amber-600/20' => $stats['listings_hidden'] > 0,
+                            'bg-gray-100 text-gray-700' => $stats['listings_hidden'] === 0,
+                        ])
+                        dusk="listing-moderation-hidden-count"
+                    >
+                        {{ __('listing-moderation.dashboard.hidden_count', ['count' => $stats['listings_hidden']]) }}
+                    </span>
+                </div>
+                <h2 class="mt-4 text-base font-semibold text-gray-900 group-hover:text-brand-700">{{ __('listing-moderation.dashboard.title') }}</h2>
+                <p class="mt-1 text-sm leading-relaxed text-gray-600">
+                    {{ __('listing-moderation.dashboard.description') }}
+                </p>
+            </div>
+            <span class="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-brand-700">
+                {{ __('listing-moderation.dashboard.link') }} <span aria-hidden="true" class="transition-transform group-hover:translate-x-0.5">&rarr;</span>
             </span>
         </a>
 
