@@ -195,6 +195,29 @@ class ListingModerationIndexTest extends TestCase
             ->assertDontSee('>Kota Alfa</option>', false);
     }
 
+    public function test_opsi_filter_menandai_kategori_nonaktif_dan_hub_diarsipkan(): void
+    {
+        $provinsi = Region::create(['name' => 'Provinsi Alfa', 'code' => 'PA']);
+        $kategoriAktif = Category::factory()->create(['name' => 'Kategori Aktif']);
+        $kategoriNonaktif = Category::factory()->inactive()->create(['name' => 'Kategori Lama']);
+        $hubAktif = $this->hub('Hub Aktif', $provinsi);
+        $hubArsip = $this->hub('Hub Lama', $provinsi, 'ARCHIVED');
+
+        $html = $this->actingAs($this->admin)
+            ->get($this->daftar())
+            ->assertOk()
+            ->assertDontSee('Kategori Aktif (nonaktif)')
+            ->assertDontSee('Hub Aktif (diarsipkan)')
+            ->getContent();
+
+        $opsi = fn (int $id, string $teks) => '/<option value="'.$id.'"\s*>'.preg_quote($teks, '/').'<\/option>/';
+
+        $this->assertMatchesRegularExpression($opsi($kategoriAktif->id, 'Kategori Aktif'), $html);
+        $this->assertMatchesRegularExpression($opsi($kategoriNonaktif->id, 'Kategori Lama (nonaktif)'), $html);
+        $this->assertMatchesRegularExpression($opsi($hubAktif->id, 'Hub Aktif'), $html);
+        $this->assertMatchesRegularExpression($opsi($hubArsip->id, 'Hub Lama (diarsipkan)'), $html);
+    }
+
     public function test_kata_kunci_mencari_judul_dengan_escape_dan_angka_mencocokkan_id(): void
     {
         $diskon = Listing::factory()->create(['title' => 'Diskon 100% Botol Kaca']);

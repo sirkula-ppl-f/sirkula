@@ -133,6 +133,58 @@ class ListingModerationShowTest extends TestCase
         $this->assertStringNotContainsString('data-confirm-variant="danger"', $html);
     }
 
+    public function test_penjual_ditangguhkan_dan_hub_tidak_aktif_ditandai_di_detail(): void
+    {
+        $provinsi = Region::create(['name' => 'Provinsi Alfa', 'code' => 'PA']);
+        $hubArsip = Hub::create(['name' => 'Bank Sampah Lama', 'type' => 'BANK_SAMPAH', 'region_id' => $provinsi->id, 'public_address' => 'Jl. Contoh No. 2', 'status' => 'ARCHIVED']);
+        $listing = Listing::factory()->create([
+            'user_id' => User::factory()->suspended()->create(['name' => 'Penjual Ditangguhkan'])->id,
+            'hub_id' => $hubArsip->id,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.listings.show', $listing))
+            ->assertOk()
+            ->assertSeeInOrder(['Penjual Ditangguhkan', 'Akun ditangguhkan', 'Bank Sampah Lama', 'Hub tidak aktif'])
+            ->assertSeeInOrder(['Diizinkan tampil', 'Tidak', 'Alasan listing tidak tampil di katalog:', 'Akun penjual ditangguhkan.', 'Hub listing tidak aktif.'])
+            ->assertDontSee('Dinonaktifkan admin.');
+
+        // Penjual dan hub yang aktif tidak diberi tanda.
+        $aktif = Listing::factory()->create([
+            'hub_id' => Hub::create(['name' => 'Bank Sampah Baru', 'type' => 'BANK_SAMPAH', 'region_id' => $provinsi->id, 'public_address' => 'Jl. Contoh No. 3', 'status' => 'ACTIVE'])->id,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.listings.show', $aktif))
+            ->assertOk()
+            ->assertSee('Bank Sampah Baru')
+            ->assertDontSee('Akun ditangguhkan')
+            ->assertDontSee('Hub tidak aktif');
+    }
+
+    public function test_teks_dialog_konfirmasi_sesuai_aksi(): void
+    {
+        $tampil = Listing::factory()->create(['title' => 'Lampu Meja']);
+        $disembunyikan = Listing::factory()->dinonaktifkanAdmin()->create(['title' => 'Kursi Kayu']);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.listings.show', $tampil))
+            ->assertOk()
+            ->assertSee('data-confirm-title="Nonaktifkan listing?"', false)
+            ->assertSee('data-confirm-label="Nonaktifkan"', false)
+            ->assertSee('dusk="listing-deactivate-button"', false)
+            ->assertDontSee('data-confirm-title="Pulihkan listing?"', false);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.listings.show', $disembunyikan))
+            ->assertOk()
+            ->assertSee('data-confirm="Listing “Kursi Kayu” akan dipulihkan, tetapi tetap harus lolos verifikasi hub dan syarat tayang lainnya sebelum tampil di katalog."', false)
+            ->assertSee('data-confirm-title="Pulihkan listing?"', false)
+            ->assertSee('data-confirm-label="Pulihkan"', false)
+            ->assertSee('dusk="listing-restore-button"', false)
+            ->assertDontSee('data-confirm-title="Nonaktifkan listing?"', false);
+    }
+
     public function test_riwayat_listing_terbaru_di_atas_dengan_id_permintaan_dipendekkan(): void
     {
         $listing = Listing::factory()->create();
