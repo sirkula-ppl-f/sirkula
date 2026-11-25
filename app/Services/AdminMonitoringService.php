@@ -646,6 +646,170 @@ class AdminMonitoringService
     }
 
     /**
+     * Bangun seluruh baris laporan CSV monitoring platform (FR-022).
+     *
+     * - Hanya memuat data agregat (tanpa PII: tidak ada nama, email, telepon, alamat pribadi).
+     * - Berat yang tidak diketahui ditulis "Tidak diketahui", tidak dianggap 0.
+     * - Setiap sel melewati sanitizeCsvRow() agar aman dari CSV Formula Injection.
+     *
+     * @param  array{period?: mixed, periode?: mixed, region_id?: mixed, hub_id?: mixed}  $rawFilters
+     * @return list<list<string>>
+     */
+    public function buildCsvRows(array $rawFilters = []): array
+    {
+        $data = $this->getDashboardData($rawFilters);
+        $filters = $data['filters'];
+        $kpis = $data['kpis'];
+
+        $periodLabel = $this->periodOptions()[$filters['period']] ?? 'Semua Waktu';
+        $regionLabel = $filters['region_id'] !== null
+            ? (Region::query()->whereKey($filters['region_id'])->value('name') ?? 'Semua Wilayah')
+            : 'Semua Wilayah';
+        $hubLabel = $filters['hub_id'] !== null
+            ? (Hub::query()->whereKey($filters['hub_id'])->value('name') ?? 'Semua Hub')
+            : 'Semua Hub';
+
+        $rows = [];
+
+        // Bagian 1: Ringkasan Platform & Filter Aktif
+        $rows[] = self::sanitizeCsvRow([
+            'Bagian',
+            'Metrik',
+            'Nilai',
+            'Keterangan',
+        ]);
+        $rows[] = self::sanitizeCsvRow(['Filter', 'Periode', $periodLabel, 'Zona waktu WIB (Asia/Jakarta)']);
+        $rows[] = self::sanitizeCsvRow(['Filter', 'Wilayah', $regionLabel, '']);
+        $rows[] = self::sanitizeCsvRow(['Filter', 'Hub Komunitas', $hubLabel, '']);
+        $rows[] = self::sanitizeCsvRow(['Ringkasan', 'Listing Aktif', $kpis['active_listings_count'], 'Memenuhi syarat tayang katalog']);
+        $rows[] = self::sanitizeCsvRow(['Ringkasan', 'Pengguna Aktif', $kpis['active_users_count'], 'Status akun ACTIVE']);
+        $rows[] = self::sanitizeCsvRow(['Ringkasan', 'Total Pesanan Lunas', $kpis['total_paid_orders'], 'Pesanan berstatus PAID, tidak dihitung ganda']);
+        $rows[] = self::sanitizeCsvRow(['Ringkasan', 'Total Barang / Lot', $kpis['total_items_quantity'], 'Total unit/lot dari pesanan lunas']);
+        $rows[] = self::sanitizeCsvRow(['Ringkasan', 'Total Nilai Transaksi (Rp)', $kpis['total_amount'], 'Rupiah bulat']);
+        $rows[] = self::sanitizeCsvRow([
+            'Ringkasan',
+            'Estimasi Berat Tercatat (kg)',
+            $kpis['known_weight_kg'] !== null ? $this->formatCsvWeight($kpis['known_weight_kg']) : 'Tidak diketahui',
+            $kpis['items_without_weight_count'] > 0
+                ? "{$kpis['items_without_weight_count']} item tanpa data berat (tidak dianggap 0 kg)"
+                : 'Estimasi dari data transaksi lunas',
+        ]);
+
+        // Pemisah bagian
+        $rows[] = [];
+
+        // Bagian 2: Agregat per Tipe Listing
+        $rows[] = self::sanitizeCsvRow([
+            'Bagian',
+            'Tipe Listing',
+            'Pesanan Lunas',
+            'Jumlah Unit/Lot',
+            'Nilai Transaksi (Rp)',
+            'Estimasi Berat (kg)',
+            'Item Tanpa Berat',
+        ]);
+
+        foreach ($data['by_type'] as $typeRow) {
+            $rows[] = self::sanitizeCsvRow([
+                'Per Tipe Listing',
+                $typeRow['label'],
+                $typeRow['orders_count'],
+                $typeRow['quantity_total'],
+                $typeRow['subtotal_amount'],
+                $typeRow['known_weight_kg'] !== null ? $this->formatCsvWeight($typeRow['known_weight_kg']) : 'Tidak diketahui',
+                $typeRow['items_without_weight_count'],
+            ]);
+        }
+
+        $rows[] = [];
+
+        // Bagian 3: Tren Transaksi Lunas Bulanan (6 Bulan Terakhir, WIB)
+        $rows[] = self::sanitizeCsvRow([
+            'Bagian',
+            'Bulan (WIB)',
+            'Pesanan Lunas',
+            'Jumlah Unit/Lot',
+            'Nilai Transaksi (Rp)',
+            'Estimasi Berat (kg)',
+            'Item Tanpa Berat',
+        ]);
+
+        foreach ($data['monthly_series'] as $monthRow) {
+            $rows[] = self::sanitizeCsvRow([
+                'Tren Bulanan',
+                $monthRow['label'],
+                $monthRow['orders_count'],
+                $monthRow['quantity_total'],
+                $monthRow['total_amount'],
+                $monthRow['known_weight_kg'] !== null ? $this->formatCsvWeight($monthRow['known_weight_kg']) : 'Tidak diketahui',
+                $monthRow['items_without_weight_count'],
+            ]);
+        }
+
+        $rows[] = [];
+
+        // Bagian 4: Agregat per Wilayah
+        $rows[] = self::sanitizeCsvRow([
+            'Bagian',
+            'Wilayah',
+            'Pesanan Lunas',
+            'Jumlah Unit/Lot',
+            'Nilai Transaksi (Rp)',
+            'Estimasi Berat (kg)',
+            'Item Tanpa Berat',
+        ]);
+
+        foreach ($data['by_region'] as $regionRow) {
+            $rows[] = self::sanitizeCsvRow([
+                'Per Wilayah',
+                $regionRow['region_name'],
+                $regionRow['orders_count'],
+                $regionRow['quantity_total'],
+                $regionRow['subtotal_amount'],
+                $regionRow['known_weight_kg'] !== null ? $this->formatCsvWeight($regionRow['known_weight_kg']) : 'Tidak diketahui',
+                $regionRow['items_without_weight_count'],
+            ]);
+        }
+
+        $rows[] = [];
+
+        // Bagian 5: Agregat per Wilayah & Hub Komunitas
+        $rows[] = self::sanitizeCsvRow([
+            'Bagian',
+            'Wilayah',
+            'Hub Komunitas',
+            'Pesanan Lunas',
+            'Jumlah Unit/Lot',
+            'Nilai Transaksi (Rp)',
+            'Estimasi Berat (kg)',
+            'Item Tanpa Berat',
+        ]);
+
+        foreach ($data['by_hub'] as $hubRow) {
+            $rows[] = self::sanitizeCsvRow([
+                'Per Wilayah & Hub',
+                $hubRow['region_name'],
+                $hubRow['hub_name'],
+                $hubRow['orders_count'],
+                $hubRow['quantity_total'],
+                $hubRow['subtotal_amount'],
+                $hubRow['known_weight_kg'] !== null ? $this->formatCsvWeight($hubRow['known_weight_kg']) : 'Tidak diketahui',
+                $hubRow['items_without_weight_count'],
+            ]);
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Format angka berat kg untuk sel CSV tanpa nol berlebih di belakang koma.
+     */
+    private function formatCsvWeight(float $weightKg): string
+    {
+        return rtrim(rtrim(number_format($weightKg, 2, '.', ''), '0'), '.');
+    }
+
+    /**
      * Netralkan nilai sel CSV agar tidak dieksekusi sebagai formula spreadsheet (FR-022 / NFR-009).
      *
      * - Nilai numerik (int/float) dipertahankan apa adanya.

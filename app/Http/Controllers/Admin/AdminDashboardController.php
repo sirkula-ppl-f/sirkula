@@ -68,29 +68,26 @@ class AdminDashboardController extends Controller
             'hub_id' => $this->queryText($request, 'hub_id'),
         ]);
 
+        $rows = $this->monitoring->buildCsvRows($filters);
+
         $dateStamp = CarbonImmutable::now(AdminMonitoringService::TIMEZONE)->format('Y-m-d');
         $filename = "laporan-monitoring-sirkula-{$dateStamp}.csv";
 
-        return response()->streamDownload(function () use ($filters) {
+        return response()->streamDownload(function () use ($rows) {
             $handle = fopen('php://output', 'w');
 
             if ($handle === false) {
                 return;
             }
 
-            fputcsv($handle, AdminMonitoringService::sanitizeCsvRow([
-                'Bagian',
-                'Periode Filter',
-            ]));
-
-            fputcsv($handle, AdminMonitoringService::sanitizeCsvRow([
-                'Filter Aktif',
-                $this->monitoring->periodOptions()[$filters['period']] ?? 'Semua Waktu',
-            ]));
+            foreach ($rows as $row) {
+                fputcsv($handle, $row);
+            }
 
             fclose($handle);
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
+            'X-Content-Type-Options' => 'nosniff',
         ]);
     }
 }
