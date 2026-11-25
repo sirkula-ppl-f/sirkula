@@ -475,6 +475,47 @@ Index: `(listing_id, created_at)` dan `(action, created_at)`. `$listing->moderat
 - `audit_logs` (PBI-19) belum punya kolom request ID, jadi request ID hanya tersimpan di `listing_moderations`.
 - `App\Support\RequestId::for($request)`: memakai header `X-Request-Id` bila cocok `[A-Za-z0-9._-]{8,64}`, selain itu membuat UUID baru. Nilainya sama sepanjang satu request.
 
+### Route dan halaman admin
+
+File `routes/modules/listing-moderation.php`, di grup `['auth', 'active', 'role:ADMIN']`. Tidak ada route ubah atau hapus riwayat.
+
+| Nama route | Method | URL | Isi |
+|---|---|---|---|
+| `admin.listings.index` | GET | `/admin/listing` | Semua listing kecuali `DRAFT`, terbaru di atas, 15 per halaman. Cari judul atau ID (`cari`), filter `tipe`, `kategori`, `hub`, `provinsi` (termasuk kab/kota di bawahnya), `verifikasi`, dan `moderasi`. Kolom: listing, tipe, kategori, penjual, hub, wilayah, harga, status verifikasi, status moderasi, tampil di katalog, tautan Detail |
+| `admin.listings.moderations` | GET | `/admin/listing/riwayat-moderasi` | Semua riwayat moderasi, terbaru di atas, 15 per halaman. Filter `aksi`, `cari` (judul atau ID listing), `dari` dan `sampai` (tanggal WIB). Alasan dipotong 100 karakter; versi lengkapnya ada di detail listing |
+| `admin.listings.show` | GET | `/admin/listing/{listing}` | Informasi listing; status verifikasi, publikasi, dan moderasi; tampil di katalog beserta alasannya; jumlah pesanan; form Nonaktifkan atau Pulihkan; riwayat moderasi listing itu. Listing `DRAFT` dan id yang tidak ada merespons 404 |
+| `admin.listings.deactivate` | PATCH | `/admin/listing/{listing}/nonaktifkan` | Field `reason` (10–500 karakter setelah di-trim). Bila berhasil, kembali ke detail dengan flash `status` |
+| `admin.listings.restore` | PATCH | `/admin/listing/{listing}/pulihkan` | Sama. Bila listing belum tayang setelah dipulihkan, ada flash tambahan `visibility_note` berisi alasannya |
+
+- **Akses:** hanya admin aktif. Warga dan pengelola hub mendapat 403, tamu diarahkan ke login, dan admin yang ditangguhkan dikeluarkan lalu diarahkan ke login (middleware `active`).
+- Form aksi memakai dialog konfirmasi `<x-confirm-dialog />` (atribut `data-confirm*`; Nonaktifkan memakai varian `danger`) dan `data-submit-once`. Tanpa JavaScript, form tetap terkirim. Bila validasi gagal, halaman kembali ke detail: kolom alasan diberi `aria-invalid` dan mendapat fokus.
+- Aksi yang ditolak aturan bisnis (misalnya sudah dinonaktifkan dari tab lain, atau listing `DRAFT`) tampil sebagai flash `error`, bukan halaman error.
+- Filter yang tidak valid diabaikan. Nomor halaman di luar jangkauan dialihkan ke halaman terakhir.
+- Navigasi: section "Moderasi" di sidebar admin (setelah "Konten & Referensi") berisi item `dusk="nav-admin-listings"`, yang aktif di semua route `admin.listings.*`. Dashboard admin punya kartu `dusk="listing-moderation-card"` dengan jumlah listing `HIDDEN`.
+
+### Komponen dan helper yang boleh dipakai modul lain
+
+```blade
+@use('App\Support\ListingStatusLabel')
+
+<x-listing-moderation.status-badge :status="$listing->moderation_status" />  {{-- Diizinkan tampil / Dinonaktifkan admin --}}
+
+{{ ListingStatusLabel::review($listing->review_status) }}     {{-- Menunggu verifikasi hub, Disetujui hub, ... --}}
+{{ ListingStatusLabel::publish($listing->publish_status) }}   {{-- Dipublikasikan / Tidak dipublikasikan --}}
+{{ ListingStatusLabel::saleUnit($listing->sale_unit) }}       {{-- per barang / per lot --}}
+```
+
+```php
+use App\Support\RequestId;
+
+$requestId = RequestId::for($request); // header X-Request-Id yang valid, atau UUID baru; sama sepanjang satu request
+```
+
+- `<x-listing-moderation.status-badge>` menerima `ListingModerationStatus` atau null (ditampilkan "—"). Status ditulis sebagai teks, tidak hanya dibedakan lewat warna. Atribut tambahan seperti `class` dan `dusk` ikut digabung.
+- `ListingStatusLabel`: nilai yang belum punya label (misalnya `PENDING` dari factory, atau status baru dari PBI lain) ditampilkan apa adanya, sedangkan null atau string kosong menjadi "—". Label diambil dari `lang/id/listing-moderation.php`.
+- `RequestId` boleh dipakai modul lain yang perlu mencatat ID permintaan.
+- Untuk alasan listing tidak tayang, pakai `ListingModerationService::visibilityBlockers()` (lihat Aturan tayang). Jangan menyusun ulang syaratnya.
+
 ### Kewajiban modul lain
 
 - **PBI-03 (verifikasi hub):** jangan mengubah `moderation_status` saat approve atau reject. Listing `HIDDEN` tetap tidak tayang walaupun di-approve hub; hanya admin yang bisa memulihkannya. Label status moderasi di antrean verifikasi belum dibuat (di luar cakupan PBI-06).
@@ -493,3 +534,19 @@ ListingModeration::factory()->forListing($listing)->restore()->create();       /
 ```
 
 Factory riwayat tidak mengubah status listing. Untuk alur sungguhan pakai `ListingModerationService`.
+
+### Keterbatasan
+
+- `audit_logs` (PBI-19) belum punya kolom request ID dan belum dijaga append-only. Aksi yang ditolak (`REJECTED`) tidak punya request ID di mana pun, karena tidak menulis baris `listing_moderations`.
+- Update/delete lewat query builder mentah melewati guard append-only `listing_moderations` (lihat bagian Riwayat).
+- Penjual belum diberi notifikasi atau tampilan status moderasi listingnya.
+- Integrasi dengan alur revisi dan verifikasi hub (PBI-03) baru diuji lewat fixture `review_status`. Perlu dicek ulang setelah PBI-03 merge.
+- Kolom dan filter wilayah di halaman admin memakai `listings.region_id` saja, tanpa fallback ke wilayah penjual.
+- Tombol Nonaktifkan di form belum memakai varian danger, karena `<x-button>` belum punya varian itu. Tombol konfirmasi di dialog sudah memakai varian danger.
+- Escape LIKE di `ListingModerationService::whereContains()` disalin dari `HandlesMasterData::searchName()` (PBI-04), jadi kodenya terduplikasi.
+- Tidak ada moderasi massal dan tidak ada hapus permanen. Listing yang punya riwayat moderasi tidak bisa dihapus (FK `restrict`).
+
+### Tes
+
+- Feature: `tests/Feature/ListingModeration/` (integritas riwayat, aturan tayang, service, pembayaran yang sedang berjalan), `tests/Feature/Admin/ListingModeration*Test.php` (akses, daftar, detail, aksi, riwayat, navigasi), `tests/Feature/View/ListingModerationViewTest.php` (komponen bersama), dan `tests/Unit/Support/RequestIdTest.php`.
+- Dusk: `tests/Browser/ListingModerationTest.php`. Isinya: alur nonaktifkan dan pulihkan beserta efeknya di katalog dan riwayat global, catatan belum tayang, batal di dialog, validasi alasan, tampilan 360px, menu seluler admin, dan filter yang tidak terpotong di layar desktop (1024, 1280, dan 1440px).
