@@ -28,5 +28,8 @@ return new class extends Migration
                 $table->dropUnique('orders_checkout_key_unique');
             });
         }
+
+        // Kolom checkout_key sengaja dipertahankan karena dapat digunakan
+        // oleh kompatibilitas data pesanan dan pengembangan PBI-20.
     }
 };

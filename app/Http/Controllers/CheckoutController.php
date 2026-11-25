@@ -28,6 +28,7 @@ class CheckoutController extends Controller
             'seller' => $preview['seller'],
             'items' => $preview['items'],
             'total' => $preview['total'],
+            'previewHash' => $preview['preview_hash'],
             'checkoutKey' => (string) Str::uuid(),
         ]);
     }
@@ -39,16 +40,18 @@ class CheckoutController extends Controller
     {
         $validated = $request->validate([
             'checkout_key' => ['required', 'string', 'max:100'],
+            'preview_hash' => ['required', 'string', 'size:64', 'regex:/\A[a-fA-F0-9]{64}\z/'],
         ]);
 
         $order = $this->checkout->checkout(
             $request->user(),
             $seller,
-            $validated['checkout_key']
+            $validated['checkout_key'],
+            $validated['preview_hash']
         );
 
         return redirect()
-            ->route('cart.index')
+            ->route('payments.show', $order)
             ->with(
                 'status',
                 'Checkout berhasil. Nomor pesanan: '.$order->order_number

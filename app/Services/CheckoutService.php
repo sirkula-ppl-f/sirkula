@@ -39,13 +39,17 @@ class CheckoutService
 
             $unitPrice = (int) $listing->price;
             $quantity = (int) $cartItem->quantity;
+            $type = $this->listingTypeValue($listing->listing_type);
 
             return [
                 'cart_item_id' => $cartItem->id,
                 'listing_id' => $listing->id,
                 'title' => $listing->title,
-                'type' => $this->listingTypeValue($listing->listing_type),
+                'type' => $type,
+                'type_label' => ListingType::from($type)->label(),
                 'quantity' => $quantity,
+                'price_seen' => (int) $cartItem->price_seen,
+                'price_changed' => (int) $cartItem->price_seen !== $unitPrice,
                 'unit_price' => $unitPrice,
                 'subtotal' => $unitPrice * $quantity,
             ];
@@ -55,19 +59,25 @@ class CheckoutService
             'seller' => $cartItems->first()->listing->seller,
             'items' => $items,
             'total' => $items->sum('subtotal'),
+            'preview_hash' => $this->generateCheckoutHash($items),
         ];
     }
 
     /**
      * Membuat pesanan dan mereservasi stok.
-     * checkout_key mencegah pesanan ganda saat permintaan diulang.
+     *
+     * previewHash memastikan isi keranjang dan harga tidak berubah
+     * sejak pembeli melihat halaman preview.
+     * checkoutKey mencegah pesanan ganda saat permintaan diulang.
      */
     public function checkout(
         User $buyer,
         int $sellerId,
-        string $checkoutKey
+        string $checkoutKey,
+        string $previewHash
     ): Order {
         $checkoutKey = trim($checkoutKey);
+        $previewHash = strtolower(trim($previewHash));
 
         if ($checkoutKey === '' || strlen($checkoutKey) > 100) {
             throw ValidationException::withMessages([
@@ -75,30 +85,41 @@ class CheckoutService
             ]);
         }
 
+        if (! preg_match('/\A[a-f0-9]{64}\z/', $previewHash)) {
+            throw ValidationException::withMessages([
+                'preview_hash' => 'Data preview checkout tidak valid. Silakan muat ulang halaman.',
+            ]);
+        }
+
         try {
             return DB::transaction(function () use (
                 $buyer,
                 $sellerId,
-                $checkoutKey
+                $checkoutKey,
+                $previewHash
             ) {
                 $existingOrder = Order::query()
                     ->where('checkout_key', $checkoutKey)
                     ->first();
 
                 if ($existingOrder) {
-                    if (
-                        (int) $existingOrder->buyer_id !== (int) $buyer->id
-                        || (int) $existingOrder->seller_id !== $sellerId
-                    ) {
-                        throw ValidationException::withMessages([
-                            'checkout' => 'Kunci checkout sudah digunakan.',
-                        ]);
-                    }
+                    $this->ensureSameCheckoutRequest(
+                        $existingOrder,
+                        $buyer,
+                        $sellerId,
+                        $previewHash
+                    );
 
                     return $existingOrder->load('items');
                 }
 
-                $cartItems = $this->getSellerCart($buyer, $sellerId);
+                // Kunci baris keranjang terlebih dahulu agar kuantitas
+                // tidak berubah selama proses checkout berlangsung.
+                $cartItems = $this->getSellerCart(
+                    $buyer,
+                    $sellerId,
+                    lockForUpdate: true
+                );
 
                 if ($cartItems->isEmpty()) {
                     throw ValidationException::withMessages([
@@ -108,6 +129,8 @@ class CheckoutService
 
                 $preparedItems = collect();
 
+                // Cart sudah diurutkan berdasarkan listing_id.
+                // Listing dikunci dengan urutan yang sama untuk mengurangi deadlock.
                 foreach ($cartItems as $cartItem) {
                     $listing = Listing::query()
                         ->whereKey($cartItem->listing_id)
@@ -129,12 +152,18 @@ class CheckoutService
 
                     $quantity = (int) $cartItem->quantity;
 
-                    $this->validateListing($buyer, $listing, $quantity);
+                    $this->validateListing(
+                        $buyer,
+                        $listing,
+                        $quantity
+                    );
 
                     $unitPrice = (int) $listing->price;
 
                     $preparedItems->push([
+                        'cart_item' => $cartItem,
                         'listing' => $listing,
+                        'listing_id' => (int) $listing->id,
                         'title' => $listing->title,
                         'type' => $this->listingTypeValue($listing->listing_type),
                         'quantity' => $quantity,
@@ -143,10 +172,20 @@ class CheckoutService
                     ]);
                 }
 
+                // Hitung ulang fingerprint dari data terkini yang sudah dikunci.
+                $currentHash = $this->generateCheckoutHash($preparedItems);
+
+                if (! hash_equals($previewHash, $currentHash)) {
+                    throw ValidationException::withMessages([
+                        'checkout' => 'Harga atau isi keranjang berubah. Silakan periksa kembali checkout sebelum melanjutkan.',
+                    ]);
+                }
+
                 $total = $preparedItems->sum('subtotal');
 
                 $order = Order::query()->create([
                     'checkout_key' => $checkoutKey,
+                    'checkout_hash' => $currentHash,
                     'order_number' => 'SRK-'.strtoupper(bin2hex(random_bytes(8))),
                     'buyer_id' => $buyer->id,
                     'seller_id' => $sellerId,
@@ -159,12 +198,21 @@ class CheckoutService
                     /** @var Listing $listing */
                     $listing = $item['listing'];
 
+                    /** @var CartItem $cartItem */
+                    $cartItem = $item['cart_item'];
+
+                    // Pembeli sudah mengonfirmasi harga yang ditampilkan.
+                    $cartItem->update([
+                        'price_seen' => $item['unit_price'],
+                    ]);
+
                     OrderItem::query()->create([
                         'order_id' => $order->id,
                         'listing_id' => $listing->id,
                         'title_snapshot' => $item['title'],
                         'type_snapshot' => $item['type'],
                         'unit_price' => $item['unit_price'],
+                        // TODO(PBI-08/PBI-20): isi snapshot berat setelah atribut berat per unit tersedia.
                         'weight_per_unit_snapshot' => null,
                         'quantity' => $item['quantity'],
                         'subtotal' => $item['subtotal'],
@@ -181,17 +229,19 @@ class CheckoutService
                 return $order->load('items');
             });
         } catch (QueryException $exception) {
-            // Jika permintaan bersamaan memakai key yang sama,
-            // ambil pesanan yang berhasil dibuat oleh permintaan pertama.
+            // Menangani dua request bersamaan yang memakai checkout_key sama.
             $existingOrder = Order::query()
                 ->where('checkout_key', $checkoutKey)
                 ->first();
 
-            if (
-                $existingOrder
-                && (int) $existingOrder->buyer_id === (int) $buyer->id
-                && (int) $existingOrder->seller_id === $sellerId
-            ) {
+            if ($existingOrder) {
+                $this->ensureSameCheckoutRequest(
+                    $existingOrder,
+                    $buyer,
+                    $sellerId,
+                    $previewHash
+                );
+
                 return $existingOrder->load('items');
             }
 
@@ -200,18 +250,74 @@ class CheckoutService
     }
 
     /**
+     * Memastikan penggunaan ulang checkout key memiliki data yang sama.
+     */
+    private function ensureSameCheckoutRequest(
+        Order $existingOrder,
+        User $buyer,
+        int $sellerId,
+        string $previewHash
+    ): void {
+        if (
+            (int) $existingOrder->buyer_id !== (int) $buyer->id
+            || (int) $existingOrder->seller_id !== $sellerId
+            || ! is_string($existingOrder->checkout_hash)
+            || ! hash_equals($existingOrder->checkout_hash, $previewHash)
+        ) {
+            throw ValidationException::withMessages([
+                'checkout' => 'Kunci checkout sudah digunakan.',
+            ]);
+        }
+    }
+
+    /**
+     * Menghasilkan fingerprint berdasarkan listing, kuantitas, dan harga.
+     */
+    private function generateCheckoutHash(Collection $items): string
+    {
+        $fingerprintItems = $items
+            ->map(function (array $item) {
+                return [
+                    'listing_id' => (int) $item['listing_id'],
+                    'quantity' => (int) $item['quantity'],
+                    'unit_price' => (int) $item['unit_price'],
+                ];
+            })
+            ->sortBy('listing_id')
+            ->values();
+
+        $fingerprint = $fingerprintItems
+            ->map(fn (array $item) => implode(':', [
+                $item['listing_id'],
+                $item['quantity'],
+                $item['unit_price'],
+            ]))
+            ->implode('|');
+
+        return hash('sha256', $fingerprint);
+    }
+
+    /**
      * Mengambil isi keranjang untuk satu penjual.
      */
-    private function getSellerCart(User $buyer, int $sellerId): Collection
-    {
-        return $buyer->cartItems()
+    private function getSellerCart(
+        User $buyer,
+        int $sellerId,
+        bool $lockForUpdate = false
+    ): Collection {
+        $query = $buyer->cartItems()
             ->whereHas('listing', function ($query) use ($sellerId) {
                 $query->where('user_id', $sellerId);
             })
             ->with(['listing.seller', 'listing.hub'])
             ->orderBy('listing_id')
-            ->orderBy('id')
-            ->get();
+            ->orderBy('id');
+
+        if ($lockForUpdate) {
+            $query->lockForUpdate();
+        }
+
+        return $query->get();
     }
 
     /**
