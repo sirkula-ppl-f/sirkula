@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ListingModerationStatus;
 use App\Enums\ListingType;
 use App\Models\Category;
 use App\Models\Listing;
@@ -38,5 +39,14 @@ class ListingFactory extends Factory
     public function belumDisetujui(): static
     {
         return $this->state(['review_status' => 'PENDING']);
+    }
+
+    /**
+     * Listing yang sedang dinonaktifkan admin (PBI-06). Hanya fixture status: tidak membuat
+     * baris riwayat moderasi. Untuk moderasi sungguhan pakai ListingModerationService.
+     */
+    public function dinonaktifkanAdmin(): static
+    {
+        return $this->state(['moderation_status' => ListingModerationStatus::Hidden->value]);
     }
 }
