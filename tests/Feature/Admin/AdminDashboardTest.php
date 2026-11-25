@@ -70,6 +70,7 @@ class AdminDashboardTest extends TestCase
                 'guides_published' => 2,
                 'users_total' => 4,
                 'users_suspended' => 1,
+                'listings_hidden' => 0,
             ])
             ->assertSee('2 kategori')
             ->assertSee('3 jenis material')
@@ -77,6 +78,7 @@ class AdminDashboardTest extends TestCase
             ->assertSee('4 entri')
             ->assertSee('2 terbit')
             ->assertSee('4 akun')
-            ->assertSee('1 akun ditangguhkan');
+            ->assertSee('1 akun ditangguhkan')
+            ->assertSee('0 dinonaktifkan');
     }
 }

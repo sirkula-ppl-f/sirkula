@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\ListingModerationStatus;
 use App\Enums\UserStatus;
 use App\Http\Controllers\Admin\Concerns\ListsMasterData;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Guide;
 use App\Models\Hub;
+use App\Models\Listing;
 use App\Models\Material;
 use App\Models\ReferencePrice;
 use App\Models\User;
@@ -39,6 +41,7 @@ class AdminDashboardController extends Controller
             'guides_published' => Guide::published()->count(),
             'users_total' => User::count(),
             'users_suspended' => User::where('status', UserStatus::Suspended)->count(),
+            'listings_hidden' => Listing::where('moderation_status', ListingModerationStatus::Hidden->value)->count(),
         ];
 
         $monitoringData = $this->monitoring->getDashboardData($filters);
