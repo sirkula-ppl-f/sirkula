@@ -32,7 +32,7 @@
         action="{{ route('admin.listings.index') }}"
         role="search"
         aria-label="{{ __('listing-moderation.admin.filter_label') }}"
-        class="mb-6 grid gap-4 rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200 sm:grid-cols-2 lg:grid-cols-4 lg:items-end"
+        class="mb-6 grid gap-4 rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200 sm:grid-cols-2 sm:items-end xl:grid-cols-4"
         dusk="listing-filter-form"
     >
         <x-form.input name="cari" type="search" :label="$filterText['search']" :value="$filters['cari']" maxlength="100" dusk="listing-search" />

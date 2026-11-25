@@ -26,7 +26,7 @@
         action="{{ route('admin.listings.moderations') }}"
         role="search"
         aria-label="{{ $text['filter_label'] }}"
-        class="mb-6 grid gap-4 rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200 sm:grid-cols-2 lg:grid-cols-[1fr_2fr_1fr_1fr_auto] lg:items-end"
+        class="mb-6 grid gap-4 rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200 sm:grid-cols-2 sm:items-end xl:grid-cols-[12rem_1fr_auto_auto_auto]"
         dusk="moderation-filter-form"
     >
         <x-form.select name="aksi" :label="$text['filter']['action']" :placeholder="$text['filter']['all_actions']" :options="$actionOptions" :value="$filters['aksi']?->value" dusk="moderation-action-filter" />
