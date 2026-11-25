@@ -41,9 +41,12 @@ class AdminDashboardController extends Controller
             'users_suspended' => User::where('status', UserStatus::Suspended)->count(),
         ];
 
+        $monitoringData = $this->monitoring->getDashboardData($filters);
+
         return view('admin.dashboard', [
             'stats' => $stats,
-            'filters' => $filters,
+            'monitoring' => $monitoringData,
+            'filters' => $monitoringData['filters'],
             'periodOptions' => $this->monitoring->periodOptions(),
             'regionOptions' => $this->monitoring->regionOptions(),
             'hubOptions' => $this->monitoring->hubOptions(),
